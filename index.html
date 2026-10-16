@@ -557,6 +557,28 @@
   .card small { display: block; margin-top: 16px; color: var(--muted); font-size: 14px; line-height: 1.5; }
   kbd { background: #f3eef5; border-radius: 6px; padding: 1px 6px; font-family: inherit; font-weight: 700; }
 
+  /* Short screens (phone turned sideways, small phones): a more compact card */
+  @media (max-height: 520px) {
+    #tip, #when { display: none !important; }
+    #stage { top: 52px; gap: .6vh; }
+    #big { font-size: 24vh; } #small { font-size: 15vh; }
+    #visual { font-size: 20vh; } #visual.many { font-size: 9vh; }
+    #word { font-size: 7vh; } #detail { font-size: 4.6vh; min-height: 0; }
+    .choice, .choices.n3 .choice, .choices.n4 .choice { --cs: min(34vh, 20vw); }
+    .mcard { width: min(26vh, 18vw); height: min(26vh, 18vw); font-size: 17vh; }
+    .bphoto { width: 34vh; } .bmini .baby { width: 17vh; } .baby { width: 22vh; }
+    .clip { width: min(46vh, 44vw); } .clip.tall { width: min(32vh, 30vw); }
+    .blob, .blob.fruit { width: 30vh; height: 30vh; } .shape { width: 30vh; height: 30vh; }
+    .qitem { font-size: 14vh; } .next, #didit { font-size: 5vh; margin-top: .6vh; }
+    .piano { height: 52vh; }
+    body:not(.music) #xylo { display: none; }
+    body:not(.music) { --bottom: 14px; }
+    body.music #xylo { height: calc(34vh + env(safe-area-inset-bottom, 0px)); }
+    body.music { --bottom: 34vh; }
+    #hint { display: none; }
+  }
+  @media (max-height: 700px) { body.music #tip { display: none !important; } }
+
   @media (prefers-reduced-motion: reduce) {
     .pop, .wiggle, .mover, .count.on, #cheer.show, .act, .blob, .blob > span, .blob::after, .shape, #visual.beat { animation: none !important; }
     .shape > * { animation: none !important; stroke-dashoffset: 0; fill-opacity: 1; }
@@ -774,7 +796,7 @@ const THINGS = [
   ["Window", "🪟", "We look outside through the window."], ["Clock", "🕰️", "A clock tells us the time."],
   ["Phone", "📱", "We call grandma on the phone."], ["Key", "🔑", "A key opens the door."],
   ["Light", "💡", "A light helps us see at night."], ["Toothbrush", "🪥", "We brush our teeth with a toothbrush."],
-  ["Soap", "🧼", "We wash our hands with soap."], ["Towel", "🧺", "We dry ourselves with a towel."],
+  ["Soap", "🧼", "We wash our hands with soap."],
   ["Hat", "🧢", "We wear a hat on our head."], ["Socks", "🧦", "We wear socks on our feet."],
   ["Jacket", "🧥", "We wear a jacket when it is cold."], ["Bag", "🎒", "We carry things in a bag."],
   ["Umbrella", "☂️", "An umbrella keeps us dry in the rain."], ["Glasses", "👓", "Glasses help us see."],
@@ -1050,8 +1072,9 @@ const TOPICS = [
       return { hue: i * 36, big: String(n), small: "", many: n > 2,
         visual: Array.from({ length: n }, (_, k) => `<span class="count">${act(emoji, one, `;animation-delay:${k * -0.3}s`)}</span>`).join(""),
         word: `<b>${n}</b> ${n === 1 ? one : many}`,
-        speech: [`${NUMBER_WORDS[n]}.`, "Let's count.",
-          ...NUMBER_WORDS.slice(1, n + 1).map((w, k) => ({ text: `${w}.`, onstart: () => countOne(k) }))],
+        // short number words ("Three!") so each one lands on its item as it lights up
+        speech: [`${cap(NUMBER_WORDS[n])}!`, "Let's count!",
+          ...NUMBER_WORDS.slice(1, n + 1).map((w, k) => ({ text: `${cap(w)}!`, onstart: () => countOne(k) }))],
         afterSpeech: () => countOne(n - 1, true) };
   }},
   { id: "colors", label: "🎨 Colors", size: COLORS.length, card(i) {
@@ -1404,7 +1427,7 @@ function setupInteractivity() {
     if (L && PHONICS[L]) {
       say(current.speech);
     } else if (current?.big && !isNaN(+current.big)) {
-      say(NUMBER_WORDS[+current.big] || current.big);
+      say(`${cap(NUMBER_WORDS[+current.big] || current.big)}!`);
     }
   };
 
@@ -1458,7 +1481,7 @@ function setupInteractivity() {
         countOne(j);
         burst(e.clientX, e.clientY, 14, "⭐");
         restart(el, "squish");
-        say(NUMBER_WORDS[j + 1]);
+        say(`${cap(NUMBER_WORDS[j + 1])}!`);
         const allOn = [...v.querySelectorAll(".count")].every(x => x.classList.contains("on"));
         if (allOn) {
           later(() => {
@@ -1470,7 +1493,7 @@ function setupInteractivity() {
       } else {
         restart(el, "jiggle");
         tone(NOTES[j], 0.4, 0.2);
-        say(NUMBER_WORDS[j + 1]);
+        say(`${cap(NUMBER_WORDS[j + 1])}!`);
       }
     };
   });
