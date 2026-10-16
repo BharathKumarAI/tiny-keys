@@ -1,0 +1,1219 @@
+<!doctype html>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="theme-color" content="#ffb3c8">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Tiny Keys</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Tiny Keys">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap">
+<style>
+  /* Layout: one full-screen play card; topic pills on top, xylophone/hint along the bottom.
+     A single sunny look on purpose (toddler toy), so no dark variant. */
+  :root {
+    color-scheme: light;
+    --hue: 200;
+    --sky: hsl(var(--hue) 95% 84%);
+    --sky-deep: hsl(calc(var(--hue) + 35) 92% 72%);
+    --tone: hsl(var(--hue) 85% 45%);
+    --tone-dark: hsl(var(--hue) 70% 26%);
+    --pop: hsl(calc(var(--hue) + 180) 80% 50%);
+    --paper: #fffdf8;
+    --ink: #3b2f45;
+    --muted: #7a6c84;
+    --rose: #ff4f86;
+    --rose-dark: #d43468;
+    --display: "Baloo 2", ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", system-ui, sans-serif;
+    --body: ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+  }
+  [hidden] { display: none !important; }
+  * { box-sizing: border-box; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+  body {
+    font-family: var(--body); color: var(--ink);
+    background: radial-gradient(circle at 30% 20%, var(--sky), var(--sky-deep)) var(--sky);
+    touch-action: none; transition: background .5s;
+  }
+  #fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; }
+
+  /* ---------- Topic pills ---------- */
+  #topics {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 4;
+    display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
+    padding: calc(10px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px));
+    touch-action: pan-x;
+  }
+  #topics::-webkit-scrollbar { display: none; }
+  #topics button {
+    flex: 0 0 auto; font: 800 17px/1 var(--display); color: var(--tone-dark);
+    background: rgb(255 255 255 / .55); border: 0; border-radius: 999px; padding: 10px 16px 8px;
+    cursor: pointer;
+  }
+  #topics button.on { background: var(--paper); color: var(--tone); box-shadow: 0 3px 0 rgb(0 0 0 / .12); }
+  #topics button:focus-visible { outline: 3px solid var(--tone-dark); }
+  @media (min-width: 900px) { #topics { justify-content: center; } }
+
+  /* ---------- Card ---------- */
+  #stage {
+    position: fixed; left: 0; right: 0; top: 64px; bottom: var(--bottom, 160px);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.5vh;
+    padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px));
+    text-align: center;
+  }
+  #glyph { display: flex; align-items: baseline; gap: 3vw; line-height: .85; font-family: var(--display); }
+  #big {
+    font-size: min(30vh, 34vw); font-weight: 800; color: var(--tone);
+    text-shadow: 0 .05em 0 var(--tone-dark), 0 .1em .25em rgb(0 0 0 / .15);
+  }
+  #small { font-size: min(18vh, 20vw); font-weight: 800; color: var(--pop); }
+  #visual { font-size: min(22vh, 30vw); line-height: 1.05; max-width: 100%; filter: drop-shadow(0 1.2vh 1.2vh rgb(0 0 0 / .18)); }
+  #visual.many { font-size: min(9vh, 11vw); max-width: min(90vw, 640px); }
+  #word {
+    font: 800 min(7.5vh, 9vw)/1.15 var(--display); max-width: 100%;
+    background: rgb(255 255 255 / .78); color: var(--ink); padding: .12em .7em .02em; border-radius: 999px;
+    text-wrap: balance;
+  }
+  #word b { color: var(--tone); }
+  .pop { animation: pop .55s cubic-bezier(.2, 1.6, .4, 1); }
+  .wiggle { animation: wiggle 1.3s ease-in-out infinite; }
+  @keyframes pop { from { transform: scale(.25) rotate(-10deg); opacity: .2; } to { transform: none; opacity: 1; } }
+  @keyframes wiggle { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-6deg) scale(1.04); } 75% { transform: rotate(6deg) scale(1.04); } }
+
+  .count { display: inline-block; opacity: .18; transition: opacity .2s; }
+  .count.on { opacity: 1; animation: pop .45s cubic-bezier(.2, 1.6, .4, 1); }
+  .blob {
+    width: min(26vh, 50vw); height: min(26vh, 50vw); border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center; font-size: min(12vh, 22vw);
+    border: 1vh solid rgb(255 255 255 / .85);
+  }
+  /* Colors: paint spreads out, then the blob breathes and its edge slowly wobbles */
+  .blob { animation: splat .9s cubic-bezier(.2, 1.4, .4, 1) both, goo 6s ease-in-out .9s infinite; position: relative; }
+  .blob > span { display: inline-block; animation: bob 2.6s ease-in-out infinite; }
+  .blob::after {
+    content: ""; position: absolute; inset: -1vh; border-radius: 50%;
+    border: .6vh solid var(--blob); animation: ripple 2.4s ease-out .3s infinite;
+  }
+  @keyframes splat { 0% { transform: scale(0); border-radius: 40% 60% 30% 70%; } 70% { border-radius: 60% 40% 70% 30%; } 100% { transform: none; } }
+  @keyframes goo { 0%,100% { border-radius: 50%; } 33% { border-radius: 56% 44% 52% 48% / 48% 54% 46% 52%; } 66% { border-radius: 46% 54% 48% 52% / 54% 46% 54% 46%; } }
+  @keyframes ripple { from { transform: scale(1); opacity: .8; } to { transform: scale(1.5); opacity: 0; } }
+
+  /* Shapes: the outline draws itself, then fills in and gently floats */
+  .shape { width: min(30vh, 60vw); height: min(30vh, 60vw); overflow: visible; animation: float 3.2s ease-in-out 1.8s infinite; }
+  .shape > * { stroke-dasharray: 1; stroke-dashoffset: 1; fill-opacity: 0;
+    animation: draw 1.4s ease-in-out forwards, fill-in .6s ease-out 1.3s forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  @keyframes fill-in { to { fill-opacity: 1; } }
+
+  /* Picture motions (calm, slow loops) */
+  .act { display: inline-block; transform-origin: 50% 90%; animation: var(--act) var(--dur, 2.4s) ease-in-out infinite; }
+  @keyframes float   { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-2.5vh); } }
+  @keyframes bob     { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-1vh); } }
+  @keyframes bounce  { 0%,100% { transform: translateY(0) scale(1, 1); } 10% { transform: scale(1.08, .92); } 45% { transform: translateY(-6vh) scale(.96, 1.04); } 80% { transform: translateY(0) scale(1.06, .94); } }
+  @keyframes hop     { 0%,55%,100% { transform: translateY(0); } 25% { transform: translateY(-7vh) rotate(-6deg); } 50% { transform: translateY(0) scale(1.08, .92); } }
+  @keyframes swim    { 0%,100% { transform: translateX(-10vw) rotate(4deg); } 50% { transform: translateX(10vw) rotate(-4deg); } }
+  @keyframes drive   { 0% { transform: translateX(-14vw); } 50% { transform: translateX(14vw); } 50.01% { transform: translateX(14vw) scaleX(-1); } 100% { transform: translateX(-14vw) scaleX(-1); } }
+  @keyframes fly     { 0%,100% { transform: translate(0, 2vh) rotate(-8deg); } 50% { transform: translate(0, -5vh) rotate(8deg); } }
+  @keyframes flap    { 0%,100% { transform: scale(1) rotate(0); } 25% { transform: scale(1.06, .94) rotate(-5deg) translateY(-1.5vh); } 75% { transform: scale(1.06, .94) rotate(5deg) translateY(-1.5vh); } }
+  @keyframes flutter { 0%,100% { transform: translate(-6vw, 0) scaleX(1); } 25% { transform: translate(0, -4vh) scaleX(.7); } 50% { transform: translate(6vw, 0) scaleX(1); } 75% { transform: translate(0, -3vh) scaleX(.7); } }
+  @keyframes sway    { 0%,100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+  @keyframes wag     { 0%,100% { transform: rotate(0); } 15%,45% { transform: rotate(-8deg); } 30%,60% { transform: rotate(8deg); } 75% { transform: rotate(0); } }
+  @keyframes waddle  { 0%,100% { transform: rotate(-7deg) translateX(-2vw); } 50% { transform: rotate(7deg) translateX(2vw); } }
+  @keyframes gallop  { 0%,100% { transform: translate(-8vw, 0) rotate(0); } 25% { transform: translate(-4vw, -3vh) rotate(-6deg); } 50% { transform: translate(0, 0) rotate(0); } 75% { transform: translate(4vw, -3vh) rotate(-6deg); } }
+  @keyframes roar    { 0%,60%,100% { transform: scale(1); } 70% { transform: scale(1.18) rotate(-3deg); } 80% { transform: scale(1.18) rotate(3deg); } 90% { transform: scale(1.14); } }
+  @keyframes buzz    { 0% { transform: translate(0, 0) rotate(0); } 25% { transform: translate(8vw, -3vh) rotate(10deg); } 50% { transform: translate(0, -6vh) rotate(0); } 75% { transform: translate(-8vw, -3vh) rotate(-10deg); } 100% { transform: translate(0, 0); } }
+  @keyframes spin    { to { transform: rotate(360deg); } }
+  @keyframes twinkle { 0%,100% { transform: scale(1) rotate(0); filter: brightness(1); } 50% { transform: scale(1.12) rotate(12deg); filter: brightness(1.25); } }
+  @keyframes wobble  { 0%,100% { transform: rotate(0); } 20% { transform: rotate(-9deg); } 40% { transform: rotate(7deg); } 60% { transform: rotate(-4deg); } 80% { transform: rotate(2deg); } }
+  @keyframes swing   { 0%,100% { transform: rotate(-12deg); } 50% { transform: rotate(12deg); } }
+  @keyframes breathe { 0%,100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+  @keyframes yoyo    { 0%,100% { transform: translateY(-6vh); } 50% { transform: translateY(4vh) rotate(360deg); } }
+  @keyframes rise    { 0% { transform: translateY(6vh); } 100% { transform: translateY(-6vh); } }
+  @keyframes scrub   { 0%,100% { transform: translateX(-2.5vw) rotate(-6deg); } 50% { transform: translateX(2.5vw) rotate(6deg); } }
+  @keyframes sip     { 0%,20%,100% { transform: rotate(0); } 45%,75% { transform: rotate(-35deg) translateY(-1vh); } }
+  @keyframes clap    { 0%,100% { transform: scale(1); } 15% { transform: scale(.82); } 30% { transform: scale(1.08); } }
+  @keyframes wave    { 0%,100% { transform: rotate(-10deg); } 25%,75% { transform: rotate(20deg); } 50% { transform: rotate(-10deg); } }
+  @keyframes flip    { 0%,40%,100% { transform: scaleX(1); } 60% { transform: scaleX(-1); } 80% { transform: scaleX(1); } }
+  @keyframes stretch { 0%,100% { transform: scale(1, 1); } 50% { transform: scale(.94, 1.14) translateY(-1vh); } }
+
+  /* My Day scenes: the baby, things around it, and little extras floating by */
+  .scene { position: relative; display: inline-block; line-height: 1; }
+  .decors { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+  .decor { position: absolute; font-size: .32em; opacity: 0; animation: var(--fx) 3s ease-in-out infinite; }
+  .decor:nth-child(1) { left: 78%; top: 6%; animation-delay: 0s; }
+  .decor:nth-child(2) { left: 92%; top: 34%; animation-delay: 1s; }
+  .decor:nth-child(3) { left: -14%; top: 22%; animation-delay: 2s; }
+  @keyframes fx-rise { 0% { transform: translateY(2vh) scale(.6); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(-14vh) scale(1.1); opacity: 0; } }
+  @keyframes fx-fall { 0% { transform: translateY(-2vh); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(12vh); opacity: 0; } }
+  @keyframes fx-pop  { 0%,100% { transform: scale(0); opacity: 0; } 30%,60% { transform: scale(1.1); opacity: 1; } }
+  .clip { display: none; width: min(46vh, 80vw); aspect-ratio: 4 / 3; object-fit: cover; border-radius: 28px;
+    border: 1vh solid rgb(255 255 255 / .85); background: var(--paper); max-width: 100%; }
+  .clip.tall { width: min(30vh, 56vw); aspect-ratio: 3 / 4; object-position: 50% 35%; }
+  .scene.has-clip .clip { display: block; animation: pop .5s ease-out; }
+  .scene.has-clip .drawn { display: none; }
+  .drawn { display: inline-block; position: relative; }
+  .slot { position: absolute; left: 50%; transform: translateX(-50%); pointer-events: none; }
+  .blob.fruit { width: min(30vh, 56vw); height: min(30vh, 56vw); font-size: min(17vh, 30vw); }
+  .slot.back  { bottom: 0; font-size: .95em; z-index: 0; }
+  .slot.front { bottom: -8%; font-size: 1.05em; z-index: 2; }
+  .slot.feet  { bottom: -3%; font-size: .34em; z-index: 2; letter-spacing: .4em; }
+  .slot.side  { bottom: 0; left: 108%; font-size: .55em; z-index: 2; }
+  .slot.hold  { top: 52%; font-size: .5em; z-index: 2; transform: translate(-50%, -50%); }
+
+  /* ---------- The baby ---------- */
+  @property --la { syntax: "<angle>"; inherits: true; initial-value: 12deg; }
+  @property --ra { syntax: "<angle>"; inherits: true; initial-value: -12deg; }
+  @property --ll { syntax: "<angle>"; inherits: true; initial-value: 0deg; }
+  @property --rl { syntax: "<angle>"; inherits: true; initial-value: 0deg; }
+  @property --tilt { syntax: "<angle>"; inherits: true; initial-value: 0deg; }
+  @property --pt { syntax: "<angle>"; inherits: true; initial-value: 0deg; }
+  .baby { position: relative; z-index: 1; width: min(24vh, 42vw); height: auto; overflow: visible; display: block; }
+  .baby .skin { fill: #f5c7a1; } .baby .suit { fill: hsl(var(--hue) 70% 62%); } .baby .sock { fill: #fff; }
+  .baby .hair { fill: none; stroke: #6b4226; stroke-width: 5; stroke-linecap: round; }
+  .baby .ink { fill: #3b2f45; } .baby .line { fill: none; stroke: #3b2f45; stroke-width: 3.5; stroke-linecap: round; }
+  .baby .cheek { fill: #ff8fa3; opacity: .45; } .baby .tongue { fill: #ff7d92; }
+  .baby .arm-l { transform-origin: 69.5px 120px; transform: rotate(var(--la)); }
+  .baby .arm-r { transform-origin: 130.5px 120px; transform: rotate(var(--ra)); }
+  .baby .prop  { transform-origin: 131px 167px; transform: rotate(calc(var(--pt) - var(--ra))); font-size: 34px; }
+  .baby .leg-l { transform-origin: 87px 172px; transform: rotate(var(--ll)); }
+  .baby .leg-r { transform-origin: 113px 172px; transform: rotate(var(--rl)); }
+  .baby .head  { transform-origin: 100px 108px; transform: rotate(var(--tilt)); }
+  .baby .legs  { transform-origin: 100px 172px; }
+  .baby .eyes-open { transform-origin: 100px 66px; animation: blink 4.5s infinite; }
+  .baby .eyes-closed, .baby .m-open { opacity: 0; }
+  .baby.sleepy .eyes-open { opacity: 0; animation: none; } .baby.sleepy .eyes-closed { opacity: 1; }
+  .baby.open .m-open { opacity: 1; } .baby.open .m-smile { opacity: 0; }
+  .baby.chew .m-open { animation: chew .5s steps(1) infinite; }
+  .baby.look-down .eyes-open { transform: translateY(4px); animation: none; }
+  @keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(.1); } }
+  @keyframes chew  { 0% { opacity: 1; } 50% { opacity: 0; } }
+
+  .baby       { animation: p-idle 3s ease-in-out infinite; }
+  .baby .whole { transform-origin: 100px 220px; }
+  @keyframes p-idle    { 0%,100% { --la: 12deg; --ra: -12deg; } 50% { --la: 20deg; --ra: -20deg; } }
+  .p-wave     { animation: p-wave .9s ease-in-out infinite; }
+  @keyframes p-wave    { 0%,100% { --ra: -150deg; } 50% { --ra: -115deg; } }
+  .p-clap     { animation: p-clap .7s ease-in-out infinite; }
+  @keyframes p-clap    { 0%,100% { --la: 28deg; --ra: -28deg; } 50% { --la: -52deg; --ra: 52deg; } }
+  .p-eat      { animation: p-eat 3s ease-in-out infinite; }
+  @keyframes p-eat     { 0%,100% { --ra: -12deg; } 25%,70% { --ra: 137deg; } }
+  .p-drink    { animation: p-drink 3s ease-in-out infinite; }
+  @keyframes p-drink   { 0%,100% { --ra: -12deg; --pt: 0deg; } 25% { --ra: 137deg; --pt: 0deg; } 35%,65% { --ra: 137deg; --pt: -45deg; } 75% { --ra: 137deg; --pt: 0deg; } }
+  .p-brush    { animation: p-brush .55s ease-in-out infinite; }
+  @keyframes p-brush   { 0%,100% { --ra: 128deg; } 50% { --ra: 144deg; } }
+  .p-wash     { animation: p-wash .5s ease-in-out infinite; }
+  @keyframes p-wash    { 0%,100% { --la: -44deg; --ra: 56deg; } 50% { --la: -56deg; --ra: 44deg; } }
+  .p-stretch  { animation: p-stretch 3.4s ease-in-out infinite; }
+  @keyframes p-stretch { 0%,100% { --la: 20deg; --ra: -20deg; } 40%,70% { --la: 165deg; --ra: -165deg; } }
+  .p-jump     { animation: p-jump 1.2s ease-in-out infinite; }
+  .p-jump .whole { animation: b-jump 1.2s ease-in-out infinite; }
+  @keyframes p-jump    { 0%,100% { --la: 40deg; --ra: -40deg; } 40% { --la: 155deg; --ra: -155deg; } }
+  @keyframes b-jump    { 0%,100% { transform: translateY(0) scale(1.04, .96); } 40% { transform: translateY(-46px); } 75% { transform: translateY(0); } }
+  .p-walk     { animation: p-walk 1.2s ease-in-out infinite; }
+  .p-walk .whole { animation: b-walk 2.4s ease-in-out infinite; }
+  .p-run      { animation: p-walk .5s ease-in-out infinite; }
+  .p-run .whole { animation: b-walk 1s ease-in-out infinite; }
+  @keyframes p-walk    { 0%,100% { --ll: -12deg; --rl: 10deg; --la: 30deg; --ra: -5deg; } 50% { --ll: 10deg; --rl: -12deg; --la: 5deg; --ra: -30deg; } }
+  @keyframes b-walk    { 0%,100% { transform: translateX(-26px); } 25%,75% { transform: translate(0, -5px); } 50% { transform: translateX(26px); } }
+  .p-dance    { animation: p-dance 1.6s ease-in-out infinite; }
+  .p-dance .whole { animation: sway 1.6s ease-in-out infinite; }
+  @keyframes p-dance   { 0%,100% { --la: 150deg; --ra: -25deg; --tilt: -8deg; } 50% { --la: 25deg; --ra: -150deg; --tilt: 8deg; } }
+  .p-hug      { animation: p-hug 2.2s ease-in-out infinite; }
+  @keyframes p-hug     { 0%,100% { --la: -62deg; --ra: 62deg; } 50% { --la: -82deg; --ra: 82deg; } }
+  .p-thanks   { animation: p-thanks 2.4s ease-in-out infinite; }
+  @keyframes p-thanks  { 0%,100% { --la: -78deg; --ra: 78deg; --tilt: 0deg; } 50% { --la: -78deg; --ra: 78deg; --tilt: 6deg; } }
+  .p-read     { animation: p-read 3s ease-in-out infinite; }
+  @keyframes p-read    { 0%,100% { --la: -46deg; --ra: 46deg; --tilt: -3deg; } 50% { --la: -46deg; --ra: 46deg; --tilt: 3deg; } }
+  .p-sing     { animation: p-sing 1.4s ease-in-out infinite; }
+  @keyframes p-sing    { 0%,100% { --ra: 120deg; --tilt: -6deg; } 50% { --ra: 128deg; --tilt: 6deg; } }
+  .baby.p-sing .m-open { animation: chew .7s steps(1) infinite; }
+  .p-sleep    { animation: p-sleep 4s ease-in-out infinite; }
+  .p-sleep .whole { animation: breathe 4s ease-in-out infinite; }
+  @keyframes p-sleep   { 0%,100% { --la: -120deg; --ra: 165deg; --tilt: 16deg; } 50% { --la: -120deg; --ra: 165deg; --tilt: 20deg; } }
+  .p-sit, .p-potty, .p-crouch, .p-tidy, .p-bath { animation: p-sit 3s ease-in-out infinite; }
+  .p-sit .whole, .p-potty .whole, .p-crouch .whole, .p-tidy .whole, .p-bath .whole { transform: translateY(24px); }
+  .p-sit .legs, .p-potty .legs, .p-crouch .legs, .p-tidy .legs, .p-bath .legs { transform: scaleY(.5); }
+  @keyframes p-sit     { 0%,100% { --la: -28deg; --ra: 28deg; } 50% { --la: -34deg; --ra: 34deg; } }
+  .p-crouch   { animation: p-crouch 1.4s ease-in-out infinite; }
+  @keyframes p-crouch  { 0%,100% { --la: -4deg; --ra: 4deg; } 50% { --la: 6deg; --ra: -6deg; } }
+  .p-tidy     { animation: p-tidy 2.6s ease-in-out infinite; }
+  @keyframes p-tidy    { 0%,100% { --ra: 8deg; --la: 10deg; } 50%,70% { --ra: -80deg; --la: 10deg; } }
+  .p-bath     { animation: p-bath .9s ease-in-out infinite; }
+  @keyframes p-bath    { 0%,100% { --la: 40deg; --ra: -75deg; } 50% { --la: 75deg; --ra: -40deg; } }
+  .p-play     { animation: p-play 1.6s ease-in-out infinite; }
+  .p-play .whole { animation: bob 1.6s ease-in-out infinite; }
+  @keyframes p-play    { 0%,100% { --ra: 60deg; --la: 15deg; } 50% { --ra: 70deg; --la: 25deg; } }
+  .p-share    { animation: p-share 2.8s ease-in-out infinite; }
+  @keyframes p-share   { 0%,100% { --ra: 10deg; } 35%,75% { --ra: -78deg; } }
+  .p-dress    { animation: p-dress 3.2s ease-in-out infinite; }
+  @keyframes p-dress   { 0%,100% { --la: 160deg; --ra: -160deg; } 55%,80% { --la: 20deg; --ra: -20deg; } }
+  .baby.clap-hit { animation: p-clap-hit .35s ease-in forwards; }
+  @keyframes p-clap-hit { from { --la: 28deg; --ra: -28deg; } to { --la: -52deg; --ra: 52deg; } }
+
+  #when {
+    font: 800 min(3.4vh, 4.6vw)/1 var(--display); color: var(--tone-dark); letter-spacing: .03em;
+    background: rgb(255 255 255 / .55); padding: .45em .9em .3em; border-radius: 999px;
+  }
+  #detail {
+    font: 600 min(3.6vh, 4.8vw)/1.35 var(--body); color: var(--ink); max-width: min(34em, 100%);
+    text-wrap: balance; min-height: 2.7em;
+  }
+  #detail.say { animation: pop .4s ease-out; }
+  .act.spin { transform-origin: 50% 50%; }
+
+  /* Animal call bubble ("Moo!") */
+  .bubble {
+    position: absolute; left: 62%; top: -4%; white-space: nowrap;
+    font: 800 min(5.5vh, 7vw)/1 var(--display); color: var(--tone-dark);
+    background: var(--paper); padding: .35em .6em .2em; border-radius: 1em 1em 1em .2em;
+    box-shadow: 0 .6vh 1.4vh rgb(0 0 0 / .15); animation: pop .5s cubic-bezier(.2, 1.6, .4, 1) .2s both;
+  }
+  .stagehold { position: relative; display: inline-block; }
+
+  /* Music: the picture dances on every note */
+  #visual.beat { animation: beat .25s ease-out; }
+  @keyframes beat { 0% { transform: scale(1); } 40% { transform: scale(1.15) rotate(-4deg); } 100% { transform: scale(1); } }
+  .mover { display: inline-block; animation: var(--move) 1.4s ease-in-out infinite alternate; }
+  @keyframes go-up    { from { transform: translateY(8vh); }  to { transform: translateY(-8vh); } }
+  @keyframes go-down  { from { transform: translateY(-8vh); } to { transform: translateY(8vh); } }
+  @keyframes go-left  { from { transform: translateX(18vw); } to { transform: translateX(-18vw); } }
+  @keyframes go-right { from { transform: translateX(-18vw); } to { transform: translateX(18vw); } }
+
+  #cheer {
+    position: fixed; top: 70px; left: 0; right: 0; z-index: 4; text-align: center; pointer-events: none;
+    font: 800 min(6vh, 7vw)/1 var(--display); color: var(--paper);
+    text-shadow: 0 .08em 0 rgb(0 0 0 / .25); opacity: 0; transition: opacity .3s;
+  }
+  #cheer.show { opacity: 1; animation: pop .6s cubic-bezier(.2, 1.6, .4, 1); }
+
+  /* ---------- Xylophone ---------- */
+  #xylo {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 2;
+    height: calc(150px + env(safe-area-inset-bottom, 0px));
+    display: flex; justify-content: center; align-items: flex-end; gap: min(10px, 1.6vw);
+    padding: 0 max(16px, env(safe-area-inset-right, 0px)) calc(18px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  }
+  .bar {
+    flex: 0 1 84px; border-radius: 14px; cursor: pointer;
+    display: flex; align-items: flex-end; justify-content: center; padding-bottom: 8px;
+    font: 800 22px/1 var(--display); color: rgb(255 255 255 / .92);
+    box-shadow: 0 6px 0 rgb(0 0 0 / .18), inset 0 -6px 0 rgb(0 0 0 / .12);
+    transition: transform .08s, filter .08s;
+  }
+  .bar.hit { transform: translateY(6px) scale(1.06); filter: brightness(1.35); }
+  #hint {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 2; text-align: center;
+    padding: 0 16px calc(16px + env(safe-area-inset-bottom, 0px));
+    font: 600 15px/1.3 var(--body); color: var(--tone-dark); opacity: .75; pointer-events: none;
+  }
+  /* Phones: hint instead of bars, bars only in Music */
+  @media (hover: none), (max-width: 700px) {
+    body:not(.music) #xylo { display: none; }
+    body:not(.music) { --bottom: 48px; }
+    body.music #hint { display: none; }
+    body.music #xylo { height: calc(28vh + env(safe-area-inset-bottom, 0px)); }
+    body.music { --bottom: 28vh; }
+    body.music .bar { font-size: 18px; }
+  }
+  @media (hover: hover) and (min-width: 701px) { #hint { display: none; } }
+
+  /* ---------- Piano ---------- */
+  body.piano-mode #xylo, body.piano-mode #hint { display: none !important; }
+  body.piano-mode { --bottom: 12px; }
+  .piano {
+    position: relative; display: flex; gap: 4px; width: min(96vw, 980px); height: min(36vh, 300px);
+    padding: 10px; border-radius: 22px; background: #3b2f45; box-shadow: 0 1.2vh 3vh rgb(0 0 0 / .25);
+    touch-action: none; filter: none;
+  }
+  .pk { font: 800 min(2.6vh, 16px)/1 var(--display); border: 0; cursor: pointer; padding: 0; }
+  .pk.white {
+    flex: 1; position: relative; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 6px;
+    padding-bottom: 12px; border-radius: 6px 6px 14px 14px; color: var(--ink);
+    background: linear-gradient(#fff 70%, #f3eef5); box-shadow: inset 0 -10px 0 var(--c), 0 4px 0 rgb(0 0 0 / .25);
+    transition: transform .06s, background .06s;
+  }
+  .pk.white kbd { font-size: .75em; opacity: .6; }
+  .pk.black {
+    position: absolute; top: 10px; z-index: 2; height: 58%; width: calc((100% - 20px) / var(--n) * .58);
+    transform: translateX(-50%); margin-left: 10px; border-radius: 0 0 10px 10px;
+    background: linear-gradient(#5a4868, #241b2c); box-shadow: 0 4px 0 rgb(0 0 0 / .35);
+  }
+  .pk.white.down { transform: translateY(3px); background: var(--c); box-shadow: inset 0 -4px 0 rgb(0 0 0 / .15); }
+  .pk.black.down { background: #8a6fa3; }
+  .pk.glow { animation: glow .9s ease-in-out infinite; }
+  .pk.white.glow { background: linear-gradient(#fff, var(--c)); }
+  .pk.glow::before { content: "⭐"; position: absolute; top: -1.6em; left: 50%; transform: translateX(-50%); font-size: 1.4em; animation: bob 1s ease-in-out infinite; }
+  .pk.black.glow { background: linear-gradient(#ffd21a, #ff8c1a); }
+  @keyframes glow { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.15) drop-shadow(0 0 10px #fff); } }
+
+  /* ---------- Grown-up setup ---------- */
+  #setup {
+    position: fixed; inset: 0; z-index: 10; overflow-y: auto; touch-action: pan-y;
+    display: flex; align-items: center; justify-content: center;
+    padding-block: 24px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+    background: radial-gradient(circle at 30% 20%, #ffe48a, #ff9ec7) #ffc2a8;
+  }
+  .card {
+    background: var(--paper); border-radius: 30px; padding: 32px 28px; width: min(540px, 100%);
+    box-shadow: 0 20px 60px rgb(0 0 0 / .16); text-align: center; margin: auto;
+  }
+  .card h1 { margin: 0; font: 800 46px/1 var(--display); color: var(--rose); }
+  .card .sub { margin: 6px 0 20px; color: var(--muted); font-size: 16px; }
+  .guide {
+    list-style: none; padding: 0; margin: 0 0 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 8px; text-align: left; font-size: 15px; color: var(--muted);
+  }
+  .guide li { background: #fff1f6; border-radius: 12px; padding: 8px 12px; }
+  .guide b { color: var(--rose); }
+  .card label { display: block; text-align: left; font-weight: 700; color: var(--muted); margin-bottom: 6px; font-size: 14px; letter-spacing: .04em; text-transform: uppercase; }
+  .card input {
+    width: 100%; font: 800 26px/1.2 var(--display); padding: 12px 16px 8px; border-radius: 16px;
+    border: 3px solid #ffd0e0; outline: none; text-align: center; color: var(--ink); background: #fff;
+    user-select: text; -webkit-user-select: text;
+  }
+  .card input:focus { border-color: var(--rose); }
+  .card button {
+    margin-top: 16px; width: 100%; font: 800 26px/1 var(--display); color: #fff;
+    background: var(--rose); border: 0; border-radius: 16px; padding: 16px 16px 12px; cursor: pointer;
+    box-shadow: 0 6px 0 var(--rose-dark);
+  }
+  .card button:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--rose-dark); }
+  .card button:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+  .credits { margin-top: 10px; text-align: left; color: var(--muted); font-size: 12px; line-height: 1.5; }
+  .credits summary { cursor: pointer; text-align: center; }
+  .card small { display: block; margin-top: 16px; color: var(--muted); font-size: 14px; line-height: 1.5; }
+  kbd { background: #f3eef5; border-radius: 6px; padding: 1px 6px; font-family: inherit; font-weight: 700; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pop, .wiggle, .mover, .count.on, #cheer.show, .act, .blob, .blob > span, .blob::after, .shape, #visual.beat { animation: none !important; }
+    .shape > * { animation: none !important; stroke-dashoffset: 0; fill-opacity: 1; }
+  }
+</style>
+
+<canvas id="fx"></canvas>
+<nav id="topics" aria-label="Topics"></nav>
+<main id="stage">
+  <div id="glyph"><span id="big"></span><span id="small"></span></div>
+  <div id="visual"></div>
+  <div id="when" hidden></div>
+  <div id="word"></div>
+  <div id="detail" hidden></div>
+</main>
+<div id="cheer"></div>
+<div id="xylo"></div>
+<div id="hint">Tap to hear again · Swipe up for the next one</div>
+
+<div id="setup">
+  <div class="card">
+    <h1>Tiny Keys</h1>
+    <p class="sub">Every key teaches something new.</p>
+    <ul class="guide">
+      <li><b>A–Z</b> letter, word &amp; picture</li>
+      <li><b>1–0</b> count to ten + xylophone</li>
+      <li><b>Space</b> colors</li>
+      <li><b>Enter</b> shapes</li>
+      <li><b>Arrows</b> up, down, left, right</li>
+      <li><b>Other keys</b> animal sounds</li>
+      <li><b>, . / ; ' [ ]</b> my day: eat, sleep, wash…</li>
+      <li><b>` - = \</b> fruits</li>
+      <li><b>🎹 Piano</b> tap the Piano button; letter keys play it</li>
+      <li><b>Phone</b> tap to repeat, swipe up for next</li>
+      <li><b>Swipe sideways</b> change topic</li>
+    </ul>
+    <label for="name">Child's name</label>
+    <input id="name" placeholder="e.g. Aarav" maxlength="20" autocomplete="off" spellcheck="false">
+    <button id="go">Let's play!</button>
+    <small>Grown-ups: <kbd>Control</kbd> + <kbd>Option</kbd> + <kbd>Q</kbd> leaves the game.</small>
+    <details class="credits">
+      <summary>Animal sound credits</summary>
+      <p>Recordings from Wikimedia Commons:
+        cow, Secretlondon (CC BY-SA 3.0) · dog, Amada44 (CC BY-SA 3.0) · cat, freemaster2 (CC0) ·
+        duck, Jonathon Jongsma / xeno-canto XC62258 (CC BY-SA 3.0) · sheep, earthcalling (public domain) ·
+        lion, த*உழவன் (public domain) · pig, erdie (CC BY 3.0) · frog, D. Gordon E. Robertson (CC BY-SA 3.0) ·
+        owl, Vianney Bajart (CC BY-SA 4.0) · horse, Hü. (public domain) · rooster, Filo gèn' (CC BY-SA 4.0) ·
+        bee, Mysid (public domain).</p>
+    </details>
+  </div>
+</div>
+
+<script>
+/* ================= Learning content ================= */
+const LETTERS = {
+  A: [["Apple","🍎"],["Ant","🐜"]],        B: [["Ball","⚽"],["Butterfly","🦋"]],
+  C: [["Cat","🐱"],["Car","🚗"]],          D: [["Dog","🐶"],["Duck","🦆"]],
+  E: [["Elephant","🐘"],["Egg","🥚"]],     F: [["Fish","🐟"],["Frog","🐸"]],
+  G: [["Giraffe","🦒"],["Grapes","🍇"]],   H: [["House","🏠"],["Horse","🐴"]],
+  I: [["Ice cream","🍦"],["Igloo","🛖"]],  J: [["Juice","🧃"],["Jellyfish","🪼"]],
+  K: [["Kite","🪁"],["Koala","🐨"]],       L: [["Lion","🦁"],["Lemon","🍋"]],
+  M: [["Monkey","🐵"],["Moon","🌙"]],      N: [["Nest","🪺"],["Nose","👃"]],
+  O: [["Orange","🍊"],["Owl","🦉"]],       P: [["Penguin","🐧"],["Pizza","🍕"]],
+  Q: [["Queen","👑"],["Quilt","🛏️"]],      R: [["Rainbow","🌈"],["Rocket","🚀"]],
+  S: [["Sun","☀️"],["Star","⭐"]],          T: [["Tiger","🐯"],["Train","🚂"]],
+  U: [["Umbrella","☂️"],["Unicorn","🦄"]], V: [["Van","🚐"],["Violin","🎻"]],
+  W: [["Whale","🐳"],["Watermelon","🍉"]], X: [["Xylophone","🎶"],["Fox","🦊"]],
+  Y: [["Yo-yo","🪀"],["Yak","🐃"]],        Z: [["Zebra","🦓"],["Zoo","🦁"]],
+};
+const NUMBER_WORDS = ["zero","one","two","three","four","five","six","seven","eight","nine","ten"];
+const COUNT_THINGS = [["star","stars","⭐"],["apple","apples","🍎"],["fish","fish","🐟"],["balloon","balloons","🎈"],
+  ["flower","flowers","🌸"],["ladybug","ladybugs","🐞"],["strawberry","strawberries","🍓"],
+  ["butterfly","butterflies","🦋"],["car","cars","🚗"],["chick","chicks","🐥"]];
+const COLORS = [
+  ["Red","#ff3b3b","🍎","an apple"], ["Orange","#ff8c1a","🍊","an orange"],
+  ["Yellow","#ffd21a","🍌","a banana"], ["Green","#3cc84a","🐸","a frog"],
+  ["Blue","#2f8cff","🐳","a whale"], ["Purple","#9b4dff","🍇","grapes"],
+  ["Pink","#ff6fb5","🌸","a flower"], ["Brown","#9a5b2e","🐻","a bear"],
+  ["Black","#222222","🐈‍⬛","a cat"], ["White","#ffffff","☁️","a cloud"],
+];
+const SHAPES = [
+  ["Circle","A circle is round, like a ball.",'<circle cx="50" cy="50" r="44"/>'],
+  ["Square","A square has four sides.",'<rect x="8" y="8" width="84" height="84" rx="4"/>'],
+  ["Triangle","A triangle has three sides.",'<polygon points="50,6 95,92 5,92"/>'],
+  ["Star","Twinkle twinkle, little star!",'<polygon points="50,4 62,38 98,38 69,59 80,94 50,73 20,94 31,59 2,38 38,38"/>'],
+  ["Heart","A heart means love.",'<path d="M50 90 C10 62 2 40 14 22 C26 6 46 12 50 28 C54 12 74 6 86 22 C98 40 90 62 50 90Z"/>'],
+  ["Rectangle","A rectangle is long, with four sides.",'<rect x="2" y="24" width="96" height="52" rx="4"/>'],
+  ["Oval","An oval looks like an egg.",'<ellipse cx="50" cy="50" rx="30" ry="45"/>'],
+  ["Diamond","A diamond is pointy.",'<polygon points="50,2 92,50 50,98 8,50"/>'],
+];
+// My Day: everyday actions in the order a toddler's day goes. The baby acts each one out.
+// [name, baby pose, things around the baby, [floating extra, how it moves], when, what & why, your turn, sound]
+//   things: prop = in the baby's hand, back/front = behind/in front, feet, side, hold = held at the chest
+const ACTIONS = [
+  ["Wake up","stretch",{ face: "open" },["☀️","fx-pop"],"☀️ Morning","Good morning! We wake up and stretch our arms.","Can you stretch up high?"],
+  ["Use the potty","potty",{ back: "🚽" },["✨","fx-pop"],"🚽 Potty time","When we need to pee, we sit on the potty.","Then we flush, and wash our hands."],
+  ["Brush teeth","brush",{ prop: "🪥", face: "open" },["🫧","fx-rise"],"☀️ Morning and 🌙 night","We brush our teeth to keep them clean and strong.","Brush, brush, brush. Can you show me?"],
+  ["Wash hands","wash",{ hold: "🧼" },["🫧","fx-rise"],"🍽️ Before we eat","We wash our hands with soap and water.","Rub, rub, rub. The bubbles wash the germs away."],
+  ["Get dressed","dress",{ prop: "👕" },["🧦","fx-pop"],"☀️ Morning","We put on our clothes. A shirt, pants and socks.","Arms up! Now the shirt goes on."],
+  ["Put on shoes","crouch",{ feet: "👟👟" },["⭐","fx-pop"],"🚪 Before going out","We put on our shoes before we go outside.","Left foot, right foot."],
+  ["Eat","eat",{ prop: "🥄", face: "chew" },["🥕","fx-pop"],"🍽️ Meal time","We eat food to grow big and strong.","Open wide. Yum yum!"],
+  ["Drink","drink",{ prop: "🥛" },["💧","fx-fall"],"💧 When we are thirsty","When we are thirsty, we drink water or milk.","Sip, sip. Ahh."],
+  ["Walk","walk",{},["👣","fx-pop"],"🌳 Going outside","We walk with our feet. Step, step, step.","Can you walk slowly, like a turtle?"],
+  ["Run","run",{},["💨","fx-pop"],"🌳 At the park","Running is fast. We run and play at the park.","Ready, set, go!"],
+  ["Jump","jump",{ face: "open" },["⭐","fx-pop"],"🧸 Play time","We jump up high with both feet.","One, two, three, jump!"],
+  ["Play","play",{ prop: "🧸" },["🧩","fx-pop"],"🧸 Play time","We play with our toys. Playing is fun.","What is your favorite toy?"],
+  ["Share","share",{ prop: "🧸" },["💛","fx-rise"],"💛 Being kind","We share our toys with our friends.","Here you go! Sharing makes everyone happy."],
+  ["Tidy up","tidy",{ prop: "🧸", side: "🧺" },["✨","fx-pop"],"🧸 After playing","When we finish playing, we put our toys away.","Clean up, clean up, everybody clean up."],
+  ["Clap","clap",{ face: "open" },["✨","fx-pop"],"🎉 Happy time","We clap our hands when we are happy.","Clap, clap, clap!","clap"],
+  ["Wave","wave",{},["😊","fx-pop"],"👋 Hello and goodbye","We wave to say hello, and to say goodbye.","Can you wave? Bye bye!"],
+  ["Hug","hug",{},["❤️","fx-rise"],"❤️ Love","We hug the people we love.","Give a big, big hug."],
+  ["Sing","sing",{ prop: "🎤" },["🎵","fx-rise"],"🎵 Music time","We sing songs with our voice.","La, la, la."],
+  ["Dance","dance",{ face: "open" },["🎶","fx-rise"],"🎵 Music time","We move our body to the music.","Arms up, wiggle, wiggle, dance."],
+  ["Sit down","sit",{ back: "🪑" },["✨","fx-pop"],"🍽️ At the table","We sit on a chair to eat, and to read.","Can you sit down nicely?"],
+  ["Say thank you","thanks",{},["💛","fx-rise"],"💛 Being kind","When someone helps us, we say thank you.","Hands together. Thank you!"],
+  ["Read a book","read",{ hold: "📖", face: "look-down" },["⭐","fx-pop"],"🌙 Story time","We read books and look at the pictures.","Let's turn the page."],
+  ["Take a bath","bath",{ front: "🛁" },["🫧","fx-rise"],"🌙 Evening","We take a bath to get clean.","Splash, splash. Wash your tummy and your toes."],
+  ["Sleep","sleep",{ face: "sleepy" },["💤","fx-rise"],"🌙 Bedtime","We sleep in our bed at night, so we can grow.","Hands under your cheek. Close your eyes. Shh."],
+];
+// Fruits: the baby eats each one.  [name, picture, color, fact, your turn]
+const FRUITS = [
+  ["Apple","🍎","Red","An apple is round and crunchy.","Take a big bite. Crunch, crunch!"],
+  ["Banana","🍌","Yellow","A banana is long and yellow. We peel it first.","Peel, peel. Now take a bite. Yum!"],
+  ["Orange","🍊","Orange","An orange is round and juicy.","Peel it, and eat a piece. So juicy!"],
+  ["Grapes","🍇","Purple","Grapes are small and sweet. They grow in a bunch.","Pick one grape and eat it. Mmm."],
+  ["Strawberry","🍓","Red","A strawberry is red, with tiny seeds.","Nibble, nibble. So sweet!"],
+  ["Watermelon","🍉","Green and red","A watermelon is big. It is green outside, and red inside.","Slurp! So juicy!"],
+  ["Mango","🥭","Yellow","A mango is soft and sweet.","Yum yum, mango!"],
+  ["Pear","🍐","Green","A pear is green and sweet.","Take a bite. Crunch!"],
+  ["Cherries","🍒","Red","Cherries are small and red. They grow in pairs.","Eat one cherry. Mmm."],
+  ["Pineapple","🍍","Yellow","A pineapple is spiky outside, and sweet inside.","Eat a little piece. Yum!"],
+  ["Peach","🍑","Orange","A peach is soft and fuzzy.","Take a soft bite. Mmm."],
+  ["Kiwi","🥝","Green","A kiwi is brown outside, and green inside.","Scoop and eat. Yum!"],
+  ["Blueberries","🫐","Blue","Blueberries are tiny and blue.","Pop one in your mouth!"],
+];
+
+const FRUIT_HEX = { "Red": "#ff6b6b", "Yellow": "#ffd84d", "Orange": "#ffa04d", "Purple": "#b07cff",
+  "Green": "#7fd96b", "Green and red": "#7fd96b", "Blue": "#6aa8ff" };
+
+/* The baby: a little drawing whose arms, legs and head move for each action */
+function baby(pose, things = {}) {
+  const prop = things.prop ? `<text class="prop" x="131" y="179" text-anchor="middle">${things.prop}</text>` : "";
+  const slot = k => things[k] ? `<span class="slot ${k}">${things[k]}</span>` : "";
+  return `${slot("back")}<svg class="baby p-${pose} ${things.face || ""}" viewBox="0 0 200 250" aria-hidden="true">
+    <g class="whole">
+      <g class="legs">
+        <g class="leg-l"><rect class="skin" x="78" y="168" width="18" height="50" rx="9"/><ellipse class="sock" cx="86" cy="220" rx="13" ry="8"/></g>
+        <g class="leg-r"><rect class="skin" x="104" y="168" width="18" height="50" rx="9"/><ellipse class="sock" cx="114" cy="220" rx="13" ry="8"/></g>
+      </g>
+      <path class="suit" d="M70 112 Q100 100 130 112 L137 176 Q100 192 63 176 Z"/>
+      <g class="head">
+        <circle class="skin" cx="58" cy="72" r="10"/><circle class="skin" cx="142" cy="72" r="10"/>
+        <circle class="skin" cx="100" cy="68" r="42"/>
+        <path class="hair" d="M90 30 q10 -14 20 0 q-8 -5 -10 6"/>
+        <g class="eyes-open"><ellipse class="ink" cx="85" cy="66" rx="4.5" ry="6"/><ellipse class="ink" cx="115" cy="66" rx="4.5" ry="6"/></g>
+        <g class="eyes-closed"><path class="line" d="M79 67 q6 5 12 0"/><path class="line" d="M109 67 q6 5 12 0"/></g>
+        <circle class="cheek" cx="74" cy="82" r="7"/><circle class="cheek" cx="126" cy="82" r="7"/>
+        <path class="line m-smile" d="M89 86 q11 10 22 0"/>
+        <g class="m-open"><ellipse class="ink" cx="100" cy="90" rx="7" ry="8"/><ellipse class="tongue" cx="100" cy="94" rx="4.5" ry="3"/></g>
+      </g>
+      <g class="arm-l"><rect class="suit" x="62" y="116" width="15" height="46" rx="7.5"/><circle class="skin" cx="69.5" cy="164" r="9"/></g>
+      <g class="arm-r"><rect class="suit" x="123" y="116" width="15" height="46" rx="7.5"/><circle class="skin" cx="130.5" cy="164" r="9"/>${prop}</g>
+    </g>
+  </svg>${slot("front")}${slot("feet")}${slot("side")}${slot("hold")}`;
+}
+// clip = a real video in videos/ (e.g. "brush-teeth"). Until it plays, or if it's
+// missing, the drawn baby acts it out instead.
+function scene(inner, [extra, fx], clip) {
+  const decor = [0, 1, 2].map(() => `<span class="decor" style="--fx:${fx}">${extra}</span>`).join("");
+  const video = clip ? `<video class="clip" data-clip="${clip}" muted loop playsinline autoplay preload="auto"
+    onloadedmetadata="this.classList.toggle('tall', this.videoHeight > this.videoWidth)"
+    onplaying="this.closest('.scene').classList.add('has-clip')" onerror="this.remove()"></video>` : "";
+  return `<span class="scene">${video}<span class="drawn">${inner}</span><span class="decors">${decor}</span></span>`;
+}
+const slug = t => t.toLowerCase().replace(/[^a-z]+/g, "-").replace(/^-|-$/g, "");
+
+const MOVES = [
+  ["ArrowUp","Up","🎈","The balloon goes up!","go-up"],
+  ["ArrowDown","Down","🍎","The apple falls down!","go-down"],
+  ["ArrowLeft","Left","🐢","The turtle walks left!","go-left"],
+  ["ArrowRight","Right","🚗","The car drives right!","go-right"],
+];
+const ANIMALS = [
+  ["cow","🐮","moo"], ["dog","🐶","woof woof"], ["cat","🐱","meow"], ["duck","🦆","quack quack"],
+  ["sheep","🐑","baa"], ["lion","🦁","roar"], ["pig","🐷","oink oink"], ["frog","🐸","ribbit"],
+  ["owl","🦉","hoo hoo"], ["horse","🐴","neigh"], ["rooster","🐓","cock a doodle doo"], ["bee","🐝","buzz"],
+];
+// Xylophone: C major, keys 1–9 then 0 (ten)
+const NOTES = [523.25, 587.33, 659.25, 698.46, 783.99, 880.0, 987.77, 1046.5, 1174.66, 1318.51];
+const BAR_COLORS = ["#ff4d4d","#ff8a3d","#ffc93d","#7ed957","#3dd6a8","#3db8ff","#5a7bff","#a05aff","#e05aff","#ff5ab4"];
+// Songs: [name, picture, style, instrument, ms per beat, notes ("C5:2" = C5 for 2 beats), mood]
+const SONGS = [
+  ["Twinkle Twinkle","⭐","🎶 Music box · Lullaby","musicbox",520,"C5 C5 G5 G5 A5 A5 G5:2 F5 F5 E5 E5 D5 D5 C5:2","calm"],
+  ["Brahms' Lullaby","🌙","🎶 Music box · Lullaby","musicbox",430,"E5 E5 G5:3 E5 E5 G5:3 E5 G5 C6:2 B5:2 A5:2 A5 G5:3","calm"],
+  ["Hush Little Baby","👶","🪈 Flute · Lullaby","flute",460,"G4 E5 E5 E5 F5 E5 D5 D5:2 G4 D5 D5 D5 E5 D5 C5 C5:2","calm"],
+  ["Row Row Row Your Boat","🚣","🪈 Flute · Gentle","flute",420,"C5 C5 C5:0.75 D5:0.25 E5 E5:0.75 D5:0.25 E5:0.75 F5:0.25 G5:2","calm"],
+  ["Mary Had a Little Lamb","🐑","🔔 Xylophone · Happy","xylophone",380,"E5 D5 C5 D5 E5 E5 E5:2 D5 D5 D5:2 E5 G5 G5:2","happy"],
+  ["Old MacDonald","🐮","🪵 Marimba · Farm song","marimba",340,"G5 G5 G5 D5 E5 E5 D5:2 B5 B5 A5 A5 G5:2","happy"],
+  ["Wheels on the Bus","🚌","🪵 Marimba · Happy","marimba",330,"C5 F5 F5:0.5 F5:0.5 F5 A5 C6 A5 F5:2 G5 E5 C5:2","happy"],
+  ["Happy Birthday","🎂","🎹 Piano · Party","piano",360,"G4:0.75 G4:0.25 A4 G4 C5 B4:2 G4:0.75 G4:0.25 A4 G4 D5 C5:2","happy"],
+  ["Hot Cross Buns","🥯","🔔 Xylophone · Happy","xylophone",380,"E5 D5 C5:2 E5 D5 C5:2 C5:0.5 C5:0.5 C5:0.5 C5:0.5 D5:0.5 D5:0.5 D5:0.5 D5:0.5 E5 D5 C5:2","happy"],
+  ["Jingle Bells","🔔","🔔 Xylophone · Holiday","xylophone",330,"E5 E5 E5:2 E5 E5 E5:2 E5 G5 C5:1.5 D5:0.5 E5:4","happy"],
+  ["London Bridge","🌉","🪈 Flute · Happy","flute",380,"G5:1.5 A5:0.5 G5 F5 E5 F5 G5:2 D5 E5 F5:2 E5 F5 G5:2","happy"],
+  ["Rain Rain Go Away","🌧️","🪵 Marimba · Gentle","marimba",420,"G5 E5:2 G5 G5 E5:2 G5 A5 G5 G5 E5 F5 G5 E5:2","calm"],
+  ["Ode to Joy","🎻","🎹 Piano · Classical","piano",420,"E5 E5 F5 G5 G5 F5 E5 D5 C5 C5 D5 E5 E5:1.5 D5:0.5 D5:2","calm"],
+  ["Up and Down the Scale","🪜","🎹 Piano · Learning","piano",330,"C5 D5 E5 F5 G5 A5 B5 C6:2 B5 A5 G5 F5 E5 D5 C5:2","happy"],
+];
+const INSTRUMENTS = {
+  piano: ["piano", "A piano has black and white keys. We press them to make music."],
+  musicbox: ["music box", "A music box plays soft, tiny, tinkly notes."],
+  flute: ["flute", "We blow into a flute to make a soft sound."],
+  marimba: ["marimba", "A marimba is made of wood. We tap it with sticks."],
+  xylophone: ["xylophone", "We tap a xylophone with little sticks. Ding, ding!"],
+};
+// Piano: free play, or follow the glowing keys to play a song
+const PIANO_SONGS = [
+  ["Free play", ""],
+  ["Twinkle Twinkle", "C4 C4 G4 G4 A4 A4 G4 F4 F4 E4 E4 D4 D4 C4"],
+  ["Mary Had a Little Lamb", "E4 D4 C4 D4 E4 E4 E4 D4 D4 D4 E4 G4 G4"],
+  ["Hot Cross Buns", "E4 D4 C4 E4 D4 C4 C4 C4 C4 C4 D4 D4 D4 D4 E4 D4 C4"],
+  ["Ode to Joy", "E4 E4 F4 G4 G4 F4 E4 D4 C4 C4 D4 E4 E4 D4 D4"],
+  ["Happy Birthday", "G4 G4 A4 G4 C5 B4 G4 G4 A4 G4 D5 C5"],
+];
+// Mac keyboard as a piano: home row = white keys, row above = black keys (other letters still play)
+const PIANO_KEYS = { KeyA: 60, KeyW: 61, KeyS: 62, KeyE: 63, KeyD: 64, KeyF: 65, KeyT: 66, KeyG: 67, KeyY: 68,
+  KeyH: 69, KeyU: 70, KeyJ: 71, KeyK: 72, KeyO: 73, KeyL: 74, KeyP: 75, Semicolon: 76, Quote: 77,
+  KeyZ: 60, KeyX: 62, KeyC: 64, KeyV: 65, KeyB: 67, KeyN: 69, KeyM: 71, Comma: 72, Period: 74, Slash: 76,
+  KeyQ: 72, KeyR: 67, KeyI: 79, BracketLeft: 79, BracketRight: 81 };
+const NOTE_NAMES = ["C","C♯","D","D♯","E","F","F♯","G","G♯","A","A♯","B"];
+const NOTE_COLORS = { C: "#ff4d4d", D: "#ff8a3d", E: "#ffc93d", F: "#7ed957", G: "#3dd6a8", A: "#3db8ff", B: "#a05aff" };
+const BAR_MIDI = [72, 74, 76, 77, 79, 81, 83, 84, 86, 88];   // the xylophone bars 1–0
+const midiOf = n => { const [, l, sh, o] = n.match(/^([A-G])(#?)(\d)$/); return 12 * (+o + 1) + "C D EF G A B".indexOf(l) + (sh ? 1 : 0); };
+const parseNotes = str => str.trim().split(/\s+/).filter(Boolean).map(t => { const [n, b] = t.split(":"); return [midiOf(n), +(b || 1)]; });
+
+const CHEERS = ["Well done, {n}.", "Lovely, {n}.", "You're a star, {n}.", "Good job, {n}.",
+  "That's right, {n}.", "Keep going, {n}.", "So clever, {n}.", "I'm proud of you, {n}."];
+
+/* ================= Motions: every picture moves in its own way ================= */
+const MOTION = {
+  Apple:"bounce", Ant:"drive", Ball:"bounce", Butterfly:"flutter", Cat:"sway", Car:"drive",
+  Dog:"wag", Duck:"waddle", Elephant:"sway", Egg:"wobble", Fish:"swim", Frog:"hop",
+  Giraffe:"sway", Grapes:"swing", House:"breathe", Horse:"gallop", "Ice cream":"wobble", Igloo:"breathe",
+  Juice:"wobble", Jellyfish:"float", Kite:"fly", Koala:"sway", Lion:"roar", Lemon:"spin",
+  Monkey:"hop", Moon:"float", Nest:"breathe", Nose:"wobble", Orange:"spin", Owl:"flap",
+  Penguin:"waddle", Pizza:"spin", Queen:"sway", Quilt:"breathe", Rainbow:"breathe", Rocket:"rise",
+  Sun:"spin", Star:"twinkle", Tiger:"roar", Train:"drive", Umbrella:"swing", Unicorn:"gallop",
+  Van:"drive", Violin:"swing", Whale:"swim", Watermelon:"wobble", Xylophone:"bounce", Fox:"hop",
+  "Yo-yo":"yoyo", Yak:"sway", Zebra:"gallop", Zoo:"bounce",
+  cow:"sway", dog:"wag", cat:"sway", duck:"waddle", sheep:"hop", lion:"roar", pig:"wobble",
+  frog:"hop", owl:"flap", horse:"gallop", rooster:"flap", bee:"buzz",
+  star:"twinkle", apple:"bounce", fish:"swim", balloon:"float", flower:"sway", ladybug:"wobble",
+  strawberry:"bounce", butterfly:"flutter", car:"bounce", chick:"hop",
+  Banana:"swing", Strawberry:"bounce", Mango:"float", Pear:"sway", Cherries:"swing",
+  Pineapple:"wobble", Peach:"breathe", Kiwi:"spin", Blueberries:"bounce",
+};
+const SPEED = { spin: "9s", drive: "5s", swim: "4.5s", gallop: "1.6s", buzz: "3s", hop: "1.6s",
+  bounce: "1.5s", wag: "1.4s", roar: "2.6s", rise: "2.2s", flutter: "3.2s", yoyo: "2.4s" };
+function act(emoji, key, extra = "") {
+  const m = MOTION[key] || "float";
+  return `<span class="act ${m === "spin" ? "spin" : ""}" style="--act:${m};--dur:${SPEED[m] || "2.6s"}${extra}">${emoji}</span>`;
+}
+
+/* ================= Topics (each one is a deck of cards) ================= */
+const LETTER_KEYS = Object.keys(LETTERS);
+const visits = {};
+const TOPICS = [
+  { id: "abc", label: "🔤 ABC", size: 26, card(i) {
+      const L = LETTER_KEYS[i];
+      const list = LETTERS[L], v = (visits[L] = ((visits[L] ?? -1) + 1) % list.length);
+      const [word, emoji] = list[v];
+      return { hue: i * 14, big: L, small: L.toLowerCase(), visual: act(emoji, word),
+        word: `<b>${L}</b> is for ${word}`, speech: `«${L}» is for ${word}.` };
+  }},
+  { id: "123", label: "🔢 123", size: 10, card(i) {
+      const n = i + 1, [one, many, emoji] = COUNT_THINGS[i];
+      return { hue: i * 36, big: String(n), small: "", many: n > 2,
+        visual: Array.from({ length: n }, (_, k) => `<span class="count">${act(emoji, one, `;animation-delay:${k * -0.3}s`)}</span>`).join(""),
+        word: `<b>${n}</b> ${n === 1 ? one : many}`,
+        speech: [`${NUMBER_WORDS[n]}.`, "Let's count.",
+          ...NUMBER_WORDS.slice(1, n + 1).map((w, k) => ({ text: `${w}.`, onstart: () => countOne(k) }))],
+        afterSpeech: () => countOne(n - 1, true) };
+  }},
+  { id: "colors", label: "🎨 Colors", size: COLORS.length, card(i) {
+      const [name, hex, emoji, thing] = COLORS[i];
+      return { hue: hueOf(hex, i), big: "", small: "",
+        visual: `<span class="blob" style="background:${hex};--blob:${hex === "#ffffff" ? "#cfe" : hex}"><span>${emoji}</span></span>`,
+        word: `<b style="color:${hex === "#ffffff" ? "#8aa" : hex}">${name}</b>`, speech: `${name}. ${name}, like ${thing}.` };
+  }},
+  { id: "shapes", label: "🔺 Shapes", size: SHAPES.length, card(i) {
+      const [name, line, raw] = SHAPES[i], fill = BAR_COLORS[(i * 3) % 10];
+      const svg = raw.replace(/\/>$/, ' pathLength="1"/>');
+      return { hue: i * 45, big: "", small: "",
+        visual: `<svg class="shape" viewBox="0 0 100 100" fill="${fill}" stroke="#fff" stroke-width="4" stroke-linejoin="round">${svg}</svg>`,
+        word: `<b>${name}</b>`, speech: `${name}. ${line}` };
+  }},
+  { id: "animals", label: "🐮 Animals", size: ANIMALS.length, card(i) {
+      const [name, emoji, sound] = ANIMALS[i];
+      return { hue: i * 30, big: "", small: "", visual: `<span class="stagehold">${act(emoji, name)}<span class="bubble" hidden>${sound.includes("doodle") ? "Cock-a-doodle-doo" : cap(sound)}!</span></span>`,
+        word: `The ${name} says <b>${sound}</b>!`, speech: `The ${name} says…`,
+        afterSpeech: () => animalCall(name, sound) };
+  }},
+  { id: "day", label: "🪥 My Day", size: ACTIONS.length, card(i) {
+      const [name, pose, things, extra, when, why, turn, sfx] = ACTIONS[i];
+      return { hue: i * 15 + 190, big: "", small: "", when, detail: why,
+        visual: scene(baby(pose, things), extra, slug(name)), word: `<b>${name}</b>`,
+        speech: [`${name}.`,
+          { text: why, onstart: () => setDetail(why) },
+          { text: turn, onstart: () => { setDetail(turn); if (sfx === "clap") claps(3); } }] };
+  }},
+  { id: "fruits", label: "🍎 Fruits", size: FRUITS.length, card(i) {
+      const [name, emoji, color, fact, turn] = FRUITS[i];
+      return { hue: i * 27 + 10, big: "", small: "", when: `🎨 ${color}`, detail: fact,
+        visual: scene(`<span class="blob fruit" style="background:${FRUIT_HEX[color]};--blob:${FRUIT_HEX[color]}">${act(emoji, name)}</span>`, [emoji, "fx-pop"]),
+        word: `<b>${name}</b>`,
+        speech: [`${name}.`,
+          { text: fact, onstart: () => setDetail(fact) },
+          { text: turn, onstart: () => setDetail(turn) }] };
+  }},
+  { id: "moves", label: "↕️ Up Down", size: MOVES.length, card(i) {
+      const [, name, emoji, line, move] = MOVES[i];
+      return { hue: i * 90 + 20, big: "", small: "",
+        visual: `<span class="mover" style="--move:${move}">${emoji}</span>`,
+        word: `<b>${name}</b>`, speech: `${name}. ${line}` };
+  }},
+  { id: "music", label: "🎵 Music", size: SONGS.length, card(i) {
+      const [name, emoji, style, inst, , , mood] = SONGS[i], [instName, fact] = INSTRUMENTS[inst];
+      const lullaby = style.includes("Lullaby");
+      return { hue: i * 26 + 250, big: "", small: "", when: style, detail: fact, word: `<b>${name}</b>`,
+        visual: scene(baby(lullaby ? "sleep" : mood === "calm" ? "sing" : "dance", lullaby ? { face: "sleepy" } : mood === "calm" ? { prop: "🎤" } : { face: "open" }), [emoji, "fx-rise"]),
+        speech: [`${name}.`, { text: `Listen to the ${instName}.`, onstart: () => setDetail(fact) }],
+        afterSpeech: () => playSong(i) };
+  }},
+  { id: "piano", label: "🎹 Piano", size: PIANO_SONGS.length, card(i) {
+      const [name, notes] = PIANO_SONGS[i];
+      const free = !notes;
+      const tip = free ? "Press any key to make music. Low notes on this side, high notes on that side." : "Press the key that glows. Then the next one!";
+      return { hue: 285 + i * 20, big: "", small: "", when: free ? "🎹 Free play" : "⭐ Follow the lights",
+        word: `<b>${free ? "Piano" : name}</b>`, detail: tip, visual: pianoHTML(),
+        mount: () => mountPiano(free ? null : { name, notes: parseNotes(notes).map(n => n[0]) }),
+        speech: free ? ["Piano.", { text: "Press the keys to make music.", onstart: () => setDetail(tip) }]
+                     : [`Let's play ${name}.`, { text: "Press the key that glows.", onstart: () => setDetail(tip) }] };
+  }},
+];
+function cap(w) { return w[0].toUpperCase() + w.slice(1); }
+function hueOf(hex, i) {
+  const [r, g, b] = [1, 3, 5].map(k => parseInt(hex.slice(k, k + 2), 16) / 255);
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+  if (!d) return i * 36;
+  const h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return Math.round(h * 60 + 360) % 360;
+}
+
+/* ================= State ================= */
+const $ = id => document.getElementById(id);
+const isNative = !!window.webkit?.messageHandlers?.speak;
+let childName = "", playing = false, cardsShown = 0;
+let topic = 0, index = 0, current = null;
+const lastIndex = {};
+let timers = [];
+function clearTimers() { timers.forEach(clearTimeout); timers = []; }
+function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
+
+/* ================= Speech & sound ================= */
+// Letters are written «A» in speech text. Voices read a bare "A" as the word "uh",
+// so the native app marks it as a letter (SSML) and browsers speak it on its own.
+const LETTER_MARK = /«(.)»/g;
+// Calm, warm voices first; falls back to any English voice.
+const GENTLE_VOICES = ["Zoe", "Ava", "Samantha", "Karen", "Moira", "Tessa", "Serena", "Kate",
+  "Google UK English Female", "Microsoft Aria", "Microsoft Jenny", "Google US English"];
+let voice = null;
+function pickVoice() {
+  const all = speechSynthesis.getVoices().filter(v => /^en/i.test(v.lang));
+  const rank = v => {
+    const i = GENTLE_VOICES.findIndex(n => v.name.includes(n));
+    const quality = /premium|enhanced|natural/i.test(v.name) ? -100 : 0;
+    return (i < 0 ? 50 : i) + quality;
+  };
+  voice = all.sort((a, b) => rank(a) - rank(b))[0] || null;
+}
+if ("speechSynthesis" in window) { pickVoice(); speechSynthesis.addEventListener?.("voiceschanged", pickVoice); }
+
+/* Speech is a list of steps: "text" or { text, onstart }. Each step tells the
+   screen when it starts (counting pops in on its number), and done() runs when
+   the last one ends. Every new card bumps speechId, so anything still arriving
+   from the previous card (late events, a half-finished sentence) is ignored. */
+let speechId = 0;
+const steps = list => (Array.isArray(list) ? list : [list]).filter(Boolean).map(x => typeof x === "string" ? { text: x } : x);
+let nativeSpeech = null;   // { id, steps, done } for the Mac app's callbacks
+window.__stepStart = (id, k) => { if (nativeSpeech?.id === id) nativeSpeech.steps[k]?.onstart?.(); };
+window.__spoke = id => { if (nativeSpeech?.id === id) { const f = nativeSpeech.done; nativeSpeech = null; f?.(); } };
+
+function say(list, done) {
+  const id = ++speechId, segs = steps(list);
+  let ended = false;
+  const finish = () => { if (id === speechId && !ended) { ended = true; done?.(); } };
+  if (!segs.length) { finish(); return; }
+
+  if (isNative) {
+    const esc = t => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    // Lowercase, or the voice says "capital A"
+    const ssml = t => `<speak>${esc(t).replace(LETTER_MARK, (_, l) => `<say-as interpret-as="characters">${l.toLowerCase()}</say-as>`)}</speak>`;
+    nativeSpeech = { id, steps: segs, done: finish };
+    window.webkit.messageHandlers.speak.postMessage({ id, steps: segs.map(x => ssml(x.text)) });
+    return;
+  }
+  if (!("speechSynthesis" in window)) { segs.forEach(x => x.onstart?.()); finish(); return; }
+
+  speechSynthesis.cancel();
+  // Safari drops a sentence queued in the same instant as cancel(); give it a beat
+  setTimeout(() => {
+    if (id !== speechId) return;
+    const utterances = [];
+    for (const seg of segs) {
+      // "«A» is for Apple" → "a", " is for Apple" (a lone lowercase letter is read as its name)
+      const parts = seg.text.replace(LETTER_MARK, (_, l) => `«${l.toLowerCase()}»`).split(/«(.)»/).filter(t => t.trim());
+      parts.forEach((t, k) => {
+        const u = new SpeechSynthesisUtterance(t);
+        if (voice) u.voice = voice;
+        u.rate = 0.78; u.pitch = 1.0; u.volume = 0.85;
+        if (k === 0 && seg.onstart) u.onstart = () => { if (id === speechId) seg.onstart(); };
+        utterances.push(u);
+      });
+    }
+    const last = utterances.at(-1);
+    if (!last) { finish(); return; }
+    last.onend = last.onerror = finish;
+    utterances.forEach(u => speechSynthesis.speak(u));
+    // Some browsers never fire "end"; don't leave the card waiting forever
+    const total = segs.reduce((n, x) => n + x.text.length, 0);
+    later(() => { segs.forEach(x => x.onstart?.()); finish(); }, 3000 + total * 150);
+  }, 60);
+}
+function hush() {
+  ++speechId; nativeSpeech = null;
+  if (isNative) window.webkit.messageHandlers.speak.postMessage({ id: speechId, steps: [] });
+  else if ("speechSynthesis" in window) speechSynthesis.cancel();
+}
+let actx;
+function audio() { return actx || (actx = new (window.AudioContext || window.webkitAudioContext)()); }
+function tone(freq, dur = 1.2, vol = 0.2, at = 0) {
+  const a = audio(), t = a.currentTime + at;
+  const o = a.createOscillator(), o2 = a.createOscillator(), g = a.createGain(), g2 = a.createGain();
+  o.frequency.value = freq; o2.frequency.value = freq * 4; g2.gain.value = 0.15; // bright overtone, like a metal bar
+  o2.connect(g2).connect(g); o.connect(g).connect(a.destination);
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.005);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  o.start(t); o2.start(t); o.stop(t + dur); o2.stop(t + dur);
+}
+function boing() {
+  const a = audio(), t = a.currentTime, o = a.createOscillator(), g = a.createGain();
+  o.type = "triangle";
+  o.frequency.setValueAtTime(300 + Math.random() * 300, t);
+  o.frequency.exponentialRampToValueAtTime(900 + Math.random() * 400, t + 0.15);
+  g.gain.setValueAtTime(0.1, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+  o.connect(g).connect(a.destination); o.start(t); o.stop(t + 0.3);
+}
+
+/* ================= Confetti ================= */
+const cv = $("fx"), cx = cv.getContext("2d");
+let parts = [];
+function resize() { cv.width = innerWidth * devicePixelRatio; cv.height = innerHeight * devicePixelRatio; }
+addEventListener("resize", resize); resize();
+const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+function burst(x, y, n = 40, emoji) {
+  if (calm) n = Math.ceil(n / 4);
+  for (let i = 0; i < n; i++) {
+    const ang = Math.random() * Math.PI * 2, sp = 4 + Math.random() * 9;
+    parts.push({ x, y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp - 6, life: 1,
+      r: 6 + Math.random() * 10, hue: Math.random() * 360, rot: Math.random() * 6,
+      emoji: emoji && Math.random() < 0.25 ? emoji : null });
+  }
+}
+(function tick() {
+  const d = devicePixelRatio;
+  cx.clearRect(0, 0, cv.width, cv.height);
+  parts = parts.filter(p => p.life > 0);
+  for (const p of parts) {
+    p.x += p.vx; p.y += p.vy; p.vy += 0.35; p.vx *= 0.99; p.life -= 0.013; p.rot += 0.1;
+    cx.save(); cx.globalAlpha = Math.max(p.life, 0); cx.translate(p.x * d, p.y * d); cx.rotate(p.rot);
+    if (p.emoji) { cx.font = `${p.r * 3 * d}px serif`; cx.fillText(p.emoji, 0, 0); }
+    else { cx.fillStyle = `hsl(${p.hue} 90% 60%)`; cx.fillRect(-p.r * d / 2, -p.r * d / 4, p.r * d, p.r * d / 2); }
+    cx.restore();
+  }
+  requestAnimationFrame(tick);
+})();
+
+/* ================= Rendering ================= */
+function restart(el, cls) { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+function render(c) {
+  document.documentElement.style.setProperty("--hue", c.hue);
+  $("big").textContent = c.big; $("small").textContent = c.small;
+  $("glyph").hidden = !c.big;
+  $("visual").innerHTML = c.visual; $("visual").classList.toggle("many", !!c.many);
+  $("word").innerHTML = c.word;
+  $("when").hidden = !c.when; $("when").textContent = c.when || "";
+  $("detail").hidden = !c.detail; $("detail").textContent = c.detail || "";
+  ["glyph", "visual", "word"].forEach(id => restart($(id), "pop"));
+  c.mount?.();
+  loadClips();
+}
+// Clips are fetched first and handed to the player as a blob, which works where
+// direct video links are blocked. Each clip is fetched once and kept.
+const clipUrls = {};
+function loadClips() {
+  $("visual").querySelectorAll("video[data-clip]").forEach(v => {
+    const name = v.dataset.clip;
+    (clipUrls[name] ||= fetch(`videos/${name}.mp4`)
+      .then(r => { if (!r.ok) throw new Error(r.status); return r.blob(); })
+      .then(b => URL.createObjectURL(b))
+      .catch(e => { delete clipUrls[name]; throw e; }))
+      .catch(() => `videos/${name}.mp4`)              // Mac app: files load directly
+      .then(url => { if (v.isConnected) { v.src = url; v.play?.().catch(() => {}); } });
+  });
+}
+function play(c, { fresh = true } = {}) {
+  clearTimers();
+  const speech = steps(c.speech);
+  if (fresh) {
+    cardsShown++;
+    if (childName && cardsShown % 8 === 0) speech.push({ text: cheer() });
+    burst(innerWidth / 2, innerHeight * 0.42, 45);
+  }
+  stopCall();
+  $("visual").querySelectorAll(".count").forEach(x => x.classList.remove("on"));
+  say(speech, c.afterSpeech);
+  c.after?.(c);
+}
+function show(t, i) {
+  topic = t; index = (i + TOPICS[t].size) % TOPICS[t].size; lastIndex[t] = index;
+  current = TOPICS[t].card(index);
+  document.body.classList.toggle("music", TOPICS[t].id === "music");
+  document.body.classList.toggle("piano-mode", TOPICS[t].id === "piano");
+  [...$("topics").children].forEach((b, k) => b.classList.toggle("on", k === t));
+  $("topics").children[t].scrollIntoView({ inline: "nearest", block: "nearest" });
+  render(current); play(current);
+}
+function repeat() { if (current) { render(current); play(current, { fresh: false }); } }
+// Light up counted item k as its number is spoken (all = make sure every one is lit)
+function countOne(k, all = false) {
+  const spans = [...$("visual").querySelectorAll(".count")];
+  spans.forEach((x, j) => {
+    if ((all ? j <= k : j === k) && !x.classList.contains("on")) { x.classList.add("on"); if (!all) tone(NOTES[j], 0.5, 0.15); }
+  });
+}
+// Show the sentence the voice is saying right now
+function setDetail(text) { const d = $("detail"); d.hidden = false; d.textContent = text; restart(d, "say"); }
+// Soft hand claps (filtered noise bursts), each one as the baby's hands meet
+function clapSound() {
+  const a = audio(), t = a.currentTime, len = 0.12;
+  const buf = a.createBuffer(1, a.sampleRate * len, a.sampleRate), d = buf.getChannelData(0);
+  for (let j = 0; j < d.length; j++) d[j] = (Math.random() * 2 - 1) * Math.pow(1 - j / d.length, 4);
+  const src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+  f.type = "bandpass"; f.frequency.value = 1400; f.Q.value = 0.8; g.gain.value = 0.5;
+  src.buffer = buf; src.connect(f).connect(g).connect(a.destination); src.start(t);
+}
+function claps(n) {
+  const b = $("visual").querySelector(".baby");
+  for (let k = 0; k < n; k++) later(() => {
+    if (b) { b.classList.remove("p-clap"); restart(b, "clap-hit"); }
+    later(clapSound, 350);                       // hands meet at the end of the swing
+    later(() => b?.classList.remove("clap-hit"), 450);
+  }, 600 + k * 700);
+  later(() => b?.classList.add("p-clap"), 600 + n * 700);
+}
+
+/* Real animal recordings live in sounds/<animal>.mp3. If one is missing,
+   the voice says the sound instead. */
+// Phones only let an <audio> start right after a tap, and the published page can
+// block direct media links. So recordings are fetched, decoded and played through
+// the same Web Audio channel the Start button unlocked.
+const callBuffers = {};
+function loadCall(name) {
+  return callBuffers[name] ||= fetch(`sounds/${name}.mp3`)
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+    .then(b => audio().decodeAudioData(b))
+    .catch(e => { delete callBuffers[name]; throw e; });
+}
+let call = null, callId = 0;
+function stopCall() {
+  callId++;
+  if (call) { try { call.stop(); } catch {} call = null; }
+}
+function animalCall(name, sound) {
+  const id = ++callId, bubble = $("visual").querySelector(".bubble");
+  const showBubble = () => { if (bubble && bubble.hidden) { bubble.hidden = false; restart(bubble, "pop"); } };
+  loadCall(name).then(buf => {
+    if (id !== callId) return;
+    const a = audio(); a.resume?.();
+    const g = a.createGain(), t = a.currentTime;
+    g.gain.value = 0.9; g.connect(a.destination);
+    const twice = buf.duration < 1.5;                // very short calls (a pig's grunt) play twice
+    const srcs = (twice ? [0, buf.duration + 0.05] : [0]).map(at => {
+      const s = a.createBufferSource(); s.buffer = buf; s.connect(g); s.start(t + at); return s;
+    });
+    g.gain.setValueAtTime(0.9, t + 5);                // keep calls short: fade out after 5 s
+    g.gain.linearRampToValueAtTime(0, t + 5.6);
+    srcs.forEach(s => s.stop(t + 5.7));
+    call = { stop: () => srcs.forEach(s => s.stop()) };
+    showBubble();
+  }).catch(() => {                                  // Mac app: play the file directly
+    if (id !== callId) return;
+    const el = new Audio(`sounds/${name}.mp3`);
+    el.onplaying = showBubble;
+    el.onerror = () => { if (id === callId) { showBubble(); say(`${sound}.`); } };
+    el.play().then(() => { call = { stop: () => el.pause() }; later(() => { if (call && id === callId) stopCall(); }, 5000); })
+      .catch(() => el.onerror());
+  });
+}
+
+/* Instruments, all made in the browser: [partial ratio, level, wave], attack, decay, volume */
+const VOICES = {
+  piano:     { parts: [[1, 1, "triangle"], [2, .35, "sine"], [3, .12, "sine"]], a: .004, d: 1.8, v: .24 },
+  musicbox:  { parts: [[2, 1, "sine"], [4, .25, "sine"], [6.3, .08, "sine"]], a: .002, d: 1.1, v: .15 },
+  marimba:   { parts: [[1, 1, "sine"], [4, .18, "sine"], [10, .04, "sine"]], a: .003, d: .6, v: .32 },
+  xylophone: { parts: [[1, 1, "sine"], [4, .15, "sine"]], a: .005, d: 1.0, v: .2 },
+  flute:     { parts: [[1, 1, "sine"], [2, .12, "sine"]], a: .08, v: .16, held: true },
+};
+function note(midi, inst = "piano", dur = 0.5) {
+  const a = audio(), t = a.currentTime, f = 440 * 2 ** ((midi - 69) / 12), V = VOICES[inst];
+  const out = a.createGain(); out.connect(a.destination);
+  const end = V.held ? t + dur + 0.2 : t + V.d;
+  let lfo;
+  if (V.held) { lfo = a.createOscillator(); lfo.frequency.value = 5; var depth = a.createGain(); depth.gain.value = f * 0.006; lfo.connect(depth); lfo.start(t); lfo.stop(end); }
+  for (const [ratio, level, type] of V.parts) {
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.value = f * ratio; g.gain.value = level;
+    if (lfo) depth.connect(o.frequency);
+    o.connect(g).connect(out); o.start(t); o.stop(end);
+  }
+  out.gain.setValueAtTime(0, t);
+  out.gain.linearRampToValueAtTime(V.v, t + V.a);
+  if (V.held) { out.gain.setValueAtTime(V.v, t + dur); out.gain.linearRampToValueAtTime(0.0001, end); }
+  else out.gain.exponentialRampToValueAtTime(0.0001, end);
+}
+function playSong(i) {
+  const [, , , inst, beat, notes] = SONGS[i];
+  let at = 300;
+  for (const [m, beats] of parseNotes(notes)) {
+    later(() => {
+      note(m, inst, beats * beat / 1000 * 0.9);
+      const bar = BAR_MIDI.indexOf(m);
+      if (bar >= 0) flashBar(bar);
+      restart($("visual"), "beat");
+    }, at);
+    at += beats * beat;
+  }
+}
+
+/* ---------- Piano ---------- */
+let follow = null;   // { name, notes, idx } while following the lights
+function pianoHTML() {
+  const whites = innerWidth < 700 ? 9 : 15, hints = matchMedia("(hover: hover)").matches;
+  const letters = { 60: "A", 62: "S", 64: "D", 65: "F", 67: "G", 69: "H", 71: "J", 72: "K", 74: "L", 76: ";", 77: "'" };
+  let w = "", b = "", m = 60, j = 0;
+  while (j < whites) {
+    const name = NOTE_NAMES[m % 12];
+    if (!name.includes("♯")) {
+      w += `<button class="pk white" data-m="${m}" style="--c:${NOTE_COLORS[name]}" aria-label="${name}">
+        ${hints && letters[m] ? `<kbd>${letters[m]}</kbd>` : ""}<span>${name}</span></button>`;
+      j++;
+    } else if (j < whites) {
+      b += `<button class="pk black" data-m="${m}" style="left:${j / whites * 100}%" aria-label="${name}"></button>`;
+    }
+    m++;
+  }
+  return `<div class="piano" style="--n:${whites}">${w}${b}</div>`;
+}
+function mountPiano(song) {
+  const el = $("visual").querySelector(".piano");
+  follow = song ? { ...song, idx: 0 } : null;
+  const held = {};
+  const keyAt = e => document.elementFromPoint(e.clientX, e.clientY)?.closest(".pk");
+  el.addEventListener("pointerdown", e => {
+    e.stopPropagation(); e.preventDefault();
+    const k = keyAt(e); if (!k) return;
+    held[e.pointerId] = k; pianoPress(+k.dataset.m);
+  });
+  el.addEventListener("pointermove", e => {          // slide a finger along the keys
+    if (!(e.pointerId in held)) return;
+    const k = keyAt(e);
+    if (k && k !== held[e.pointerId]) { held[e.pointerId] = k; pianoPress(+k.dataset.m); }
+  });
+  const lift = e => { delete held[e.pointerId]; };
+  el.addEventListener("pointerup", lift); el.addEventListener("pointercancel", lift); el.addEventListener("pointerleave", lift);
+  glowNext();
+}
+function glowNext() {
+  const el = $("visual").querySelector(".piano"); if (!el) return;
+  el.querySelectorAll(".glow").forEach(k => k.classList.remove("glow"));
+  if (follow) el.querySelector(`[data-m="${follow.notes[follow.idx]}"]`)?.classList.add("glow");
+}
+function pianoPress(m) {
+  note(m, "piano", 0.6);
+  const k = $("visual").querySelector(`.piano [data-m="${m}"]`);
+  if (k) {
+    restart(k, "down"); setTimeout(() => k.classList.remove("down"), 220);
+    const r = k.getBoundingClientRect(); burst(r.left + r.width / 2, r.top, 8, "🎵");
+  }
+  if (!follow || m !== follow.notes[follow.idx]) return;
+  follow.idx++;
+  if (follow.idx < follow.notes.length) { glowNext(); return; }
+  // Finished the song: celebrate, play it back, then start again
+  const done = follow; follow = null; glowNext();
+  burst(innerWidth / 2, innerHeight * 0.3, 90, "⭐");
+  say([`You played ${done.name}!`, childName ? `Well done, ${childName}.` : "Well done."], () => {
+    done.notes.forEach((n, k) => later(() => pianoPress(n), 300 + k * 420));
+    later(() => { follow = { ...done, idx: 0 }; glowNext(); }, 600 + done.notes.length * 420);
+  });
+}
+
+let cheerTimer;
+function cheer() {
+  const text = CHEERS[Math.floor(Math.random() * CHEERS.length)].replaceAll("{n}", childName);
+  const el = $("cheer"); el.textContent = text + " 🎉"; restart(el, "show");
+  clearTimeout(cheerTimer); cheerTimer = setTimeout(() => el.classList.remove("show"), 2600);
+  burst(innerWidth / 2, innerHeight * 0.15, 80, "🎉");
+  return text;
+}
+
+/* ================= Topic pills & xylophone ================= */
+TOPICS.forEach((tp, t) => {
+  const b = document.createElement("button");
+  b.textContent = tp.label;
+  b.addEventListener("click", () => show(t, lastIndex[t] ?? 0));
+  $("topics").appendChild(b);
+});
+NOTES.forEach((_, i) => {
+  const b = document.createElement("div");
+  b.className = "bar"; b.style.background = BAR_COLORS[i];
+  b.style.height = (100 - i * 5) + "%";
+  b.textContent = (i + 1) % 10;
+  b.addEventListener("pointerdown", e => { e.stopPropagation(); hitBar(i); });
+  $("xylo").appendChild(b);
+});
+function hitBar(i) { tone(NOTES[i]); flashBar(i); }
+function flashBar(i) {
+  const b = $("xylo").children[i];
+  restart(b, "hit"); setTimeout(() => b.classList.remove("hit"), 160);
+  const r = b.getBoundingClientRect();
+  if (r.width) burst(r.left + r.width / 2, r.top, 12, "🎵");
+  if (TOPICS[topic].id === "music") restart($("visual"), "beat");
+}
+
+/* ================= Keyboard ================= */
+addEventListener("keydown", e => {
+  if (e.ctrlKey && e.altKey && e.code === "KeyQ") { e.preventDefault(); exitGame(); return; }
+  if (!playing) return;
+  e.preventDefault();
+  if (e.repeat) return;
+  const T = id => TOPICS.findIndex(t => t.id === id);
+  if (TOPICS[topic].id === "piano" && e.code in PIANO_KEYS) return pianoPress(PIANO_KEYS[e.code]);
+  if (/^Key[A-Z]$/.test(e.code)) return show(T("abc"), e.code.charCodeAt(3) - 65);
+  if (/^(Digit|Numpad)\d$/.test(e.code)) {
+    const n = +e.code.slice(-1) || 10;          // 0 means ten
+    hitBar(n - 1); return show(T("123"), n - 1);
+  }
+  if (e.code === "Space") return show(T("colors"), (lastIndex[T("colors")] ?? -1) + 1);
+  if (e.code === "Enter" || e.code === "NumpadEnter") return show(T("shapes"), (lastIndex[T("shapes")] ?? -1) + 1);
+  const m = MOVES.findIndex(x => x[0] === e.code);
+  if (m >= 0) return show(T("moves"), m);
+  if (/^(Backquote|Minus|Equal|Backslash)$/.test(e.code))
+    return show(T("fruits"), (lastIndex[T("fruits")] ?? -1) + 1);
+  if (/^(Comma|Period|Slash|Semicolon|Quote|BracketLeft|BracketRight)$/.test(e.code))
+    return show(T("day"), (lastIndex[T("day")] ?? -1) + 1);
+  boing();
+  show(T("animals"), (lastIndex[T("animals")] ?? -1) + 1);
+}, true);
+
+/* ================= Touch: tap = repeat, swipe up = next, sideways = topic ================= */
+let start = null;
+addEventListener("pointerdown", e => {
+  if (!playing || e.target.closest("#topics, #xylo, #setup, .piano")) return;
+  start = { x: e.clientX, y: e.clientY, t: Date.now() };
+});
+addEventListener("pointerup", e => {
+  if (!start) return;
+  const dx = e.clientX - start.x, dy = e.clientY - start.y; start = null;
+  const far = 50;
+  if (Math.abs(dy) > far && Math.abs(dy) >= Math.abs(dx)) show(topic, index + (dy < 0 ? 1 : -1));
+  else if (Math.abs(dx) > far) { const t = (topic + (dx < 0 ? 1 : -1) + TOPICS.length) % TOPICS.length; show(t, lastIndex[t] ?? 0); }
+  else { burst(e.clientX, e.clientY, 18); repeat(); }
+});
+addEventListener("pointercancel", () => { start = null; });
+addEventListener("contextmenu", e => e.preventDefault());
+["pointerdown", "keydown"].forEach(t => addEventListener(t, () => { if (actx?.state !== "running") actx?.resume?.(); }, true));
+addEventListener("gesturestart", e => e.preventDefault());   // iOS pinch-zoom
+
+/* ================= Start / leave ================= */
+try { $("name").value = localStorage.getItem("childName") || ""; } catch {}
+$("name").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); begin(); } });
+$("go").addEventListener("click", begin);
+render(TOPICS[0].card(0));   // card visible behind the setup screen
+
+async function begin() {
+  childName = $("name").value.trim();
+  try { localStorage.setItem("childName", childName); } catch {}
+  $("name").blur();
+  $("setup").hidden = true;
+  playing = true;
+  audio().resume();
+  try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch {}  // iPhone: play even on silent
+  ANIMALS.forEach(([name]) => loadCall(name).catch(() => {}));
+  if (!isNative) {
+    try { await document.documentElement.requestFullscreen(); } catch {}
+    try { await navigator.keyboard?.lock(); } catch {}        // Chrome: page keeps Esc etc.
+    try { await navigator.wakeLock?.request("screen"); } catch {}
+  }
+  for (const k in visits) delete visits[k];
+  show(0, 0);
+  say([`${childName ? `Hi ${childName}! ` : ""}Let's learn and play.`, ...steps(current.speech)], current.afterSpeech);
+}
+function exitGame() {
+  if (isNative) { window.webkit.messageHandlers.quit.postMessage(1); return; }
+  playing = false; clearTimers(); hush();
+  navigator.keyboard?.unlock?.();
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  $("setup").hidden = false;
+}
+</script>
+<script>
+// Save the game on this device so it works offline from the home screen
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+  addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js");
+    navigator.serviceWorker.ready.then(() => {
+      document.querySelector("#setup .card")?.insertAdjacentHTML("beforeend",
+        '<small style="color:#2e9b57">✓ Saved on this device. Works without internet.</small>');
+    });
+  });
+}
+</script>

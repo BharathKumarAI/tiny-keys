@@ -1,0 +1,15 @@
+{
+  "name": "Tiny Keys",
+  "short_name": "Tiny Keys",
+  "description": "A calm learning game for toddlers: letters, counting, colors, shapes, animals, my day, fruits, music and piano.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ffd6a8",
+  "theme_color": "#ffb3c8",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
