@@ -569,8 +569,8 @@
 </main>
 <div id="bubbles"></div>
 <div id="cheer"></div>
-<button id="singBtn" aria-label="Toggle singing songs mode"><span>🎤</span><b>Sing: On</b></button>
-<button id="lullabyBtn" aria-label="Toggle soothing lullaby music"><span>🎵</span><b>Lullaby: On</b></button>
+<button id="singBtn" aria-label="Toggle singing songs mode"><span>🎤</span><b>Sing: Off</b></button>
+<button id="lullabyBtn" aria-label="Toggle soothing lullaby music"><span>🎵</span><b>Lullaby: Off</b></button>
 <button id="jar" aria-label="Sticker jar"><span>🫙</span><b id="jarCount">0</b></button>
 <div id="stickers" hidden>
   <div class="sheet">
@@ -946,8 +946,8 @@ const SHAPE_FACTS = { Circle: "round and round and round", Square: "four sides, 
   Diamond: "pointy at the top" };
 const shapeSong = name => ({ tune: "mulberry",
   lines: [`Look at the ${name.toLowerCase()}, the ${name.toLowerCase()},`, `${SHAPE_FACTS[name]}.`, `Look at the ${name.toLowerCase()},`, "draw it in the air!"] });
-let singing = true;   // cards play with catchy music and sing-song child voice
-try { singing = localStorage.getItem("sing") !== "off"; } catch {}
+let singing = false;   // off by default: learning cards stay clear speech; a grown-up can turn songs on
+try { singing = localStorage.getItem("sing") === "on"; } catch {}
 
 
 /* ================= Motions: every picture moves in its own way ================= */
@@ -1123,6 +1123,8 @@ const recordingFor = t => window.VOICE?.[plain(t)];
 function say(list, done) {
   const id = ++speechId, segs = steps(list);
   stopVoice();
+  // Load every recording for this card at once, so there's no wait between parts
+  segs.forEach(seg => { const r = seg.text && recordingFor(seg.text); if (r) loadSound(`voice/${r}`).catch(() => {}); });
   speechActive = true;
   document.body.classList.add("voice-speaking");
   (async () => {
@@ -1664,8 +1666,8 @@ function note(midi, inst = "piano", dur = 0.5, vol = 1) {
 }
 
 /* Soothing Lullaby Music Box Engine */
-let lullabyPlaying = true;
-try { lullabyPlaying = localStorage.getItem("lullaby") !== "off"; } catch {}
+let lullabyPlaying = false;   // off by default; background music distracts from learning
+try { lullabyPlaying = localStorage.getItem("lullaby") === "on"; } catch {}
 let lullabyTimer = null;
 const LULLABY_NOTES = [
   [60, 2], [64, 2], [67, 3], [60, 2], [64, 2], [67, 3],
