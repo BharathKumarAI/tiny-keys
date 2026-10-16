@@ -1,7 +1,7 @@
 // Tiny Keys offline worker: on first visit it saves the whole game (page, sounds,
 // videos, icons) on the device, then serves everything from there, with or without internet.
 // pwa/build.sh fills in VERSION and ASSETS; a new VERSION replaces the old copy.
-const VERSION = "tiny-keys-3dd06808d8";
+const VERSION = "tiny-keys-239185df75";
 const ASSETS = ["./", "icons/apple-touch-icon.png", "icons/icon-192.png", "icons/icon-512.png", "index.html", "manifest.webmanifest", "sounds/bee.mp3", "sounds/cat.mp3", "sounds/cow.mp3", "sounds/dog.mp3", "sounds/duck.mp3", "sounds/frog.mp3", "sounds/horse.mp3", "sounds/lion.mp3", "sounds/owl.mp3", "sounds/pig.mp3", "sounds/rooster.mp3", "sounds/sheep.mp3", "videos/brush-teeth.mp4", "videos/clap.mp4", "videos/dance.mp4", "videos/drink.mp4", "videos/eat.mp4", "videos/hug.mp4", "videos/jump.mp4", "videos/play.mp4", "videos/put-on-shoes.mp4", "videos/read-a-book.mp4", "videos/run.mp4", "videos/share.mp4", "videos/sleep.mp4", "videos/wake-up.mp4", "videos/walk.mp4", "videos/wash-hands.mp4", "videos/wave.mp4"];
 const FONTS = "tiny-keys-fonts";
 

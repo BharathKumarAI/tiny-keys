@@ -658,6 +658,21 @@ const TUNES = {
     "E5 E5 F5 F5 F5 F5 A5 A5 F5 F5 E5 E5 D5 D5 C5:2", "G4 G4 C5 C5 C5 C5 C5 B4 C5 D5:2 R:2"] },
   twinkle: { beat: 560, inst: "musicbox", lines: [
     "C5 C5 G5 G5 A5 A5 G5:2", "F5 F5 E5 E5 D5 D5 C5:2", "G5 G5 F5 F5 E5 E5 D5:2", "G5 G5 F5 F5 E5 E5 D5:2"] },
+  bingo: { beat: 330, inst: "marimba", lines: [
+    "G4 C5 C5 G4 G4 A4 A4 G4:2", "G4 C5 C5 D5 D5 E5 C5:3", "E5:2 E5:2 F5:2 F5:2 F5:2", "D5:2 D5:2 E5:2 E5:2 E5:2",
+    "R:5", "C5:2 C5:2 D5:2 D5:2 D5:2", "B4 G4 A4 B4 C5:3"] },
+  mary: { beat: 400, inst: "xylophone", lines: [
+    "E5 D5 C5 D5 E5 E5 E5:2", "D5 D5 D5:2 E5 G5 G5:2", "E5 D5 C5 D5 E5 E5 E5 E5", "D5 D5 E5 D5 C5:3"] },
+  london: { beat: 380, inst: "flute", lines: [
+    "G5:1.5 A5:0.5 G5 F5 E5 F5 G5:2", "D5 E5 F5:2 E5 F5 G5:2", "G5:1.5 A5:0.5 G5 F5 E5 F5 G5:2", "D5:2 G5:2 E5 C5:3"] },
+  hotcross: { beat: 380, inst: "xylophone", lines: [
+    "E5 D5 C5:2", "E5 D5 C5:2", "C5:0.5 C5:0.5 C5:0.5 C5:0.5 D5:0.5 D5:0.5 D5:0.5 D5:0.5", "E5 D5 C5:2"] },
+  wheels: { beat: 360, inst: "marimba", lines: [
+    "C5 F5 F5:0.5 F5:0.5 F5 A5 C6 A5 F5:2", "G5 E5 C5:2 C6 A5 F5:2", "C5 F5 F5:0.5 F5:0.5 F5 A5 C6 A5 F5:2", "G5:2 C5 C5 F5:3"] },
+  rowrow: { beat: 420, inst: "flute", lines: [
+    "C5 C5 C5:0.75 D5:0.25 E5:2", "E5:0.75 D5:0.25 E5:0.75 F5:0.25 G5:3",
+    "C6:0.34 C6:0.33 C6:0.33 G5:0.34 G5:0.33 G5:0.33 E5:0.34 E5:0.33 E5:0.33 C5:0.34 C5:0.33 C5:0.33",
+    "G5:0.75 F5:0.25 E5:0.75 D5:0.25 C5:3"] },
   farm: { beat: 380, inst: "marimba", lines: [
     "G5 G5 G5 D5 E5 E5 D5:2 B5 B5 A5 A5 G5:3", "D5 G5 G5 G5 D5 E5 E5 D5:2 B5 B5 A5 A5 G5:3", "R:5",
     "D5 D5 G5 G5 G5 D5 D5 G5 G5 G5:2", "G5 G5 G5 D5 E5 E5 D5:2 B5 B5 A5 A5 G5:3"] },
@@ -702,6 +717,34 @@ const ANIMAL_WORDS = { cow: "moo moo", dog: "woof woof", cat: "meow meow", duck:
 const farmSong = name => ({ tune: "farm", call: name,
   lines: ["Old MacDonald had a farm, E I E I O.", `And on that farm he had a ${name}, E I E I O.`, "",
           `With a ${ANIMAL_WORDS[name]} here, and a ${ANIMAL_WORDS[name]} there.`, "Old MacDonald had a farm, E I E I O."] });
+// "If you're a lion and you know it, give a roar!" with the real animal in the gaps
+const happyAnimal = (name, doIt) => ({ tune: "happy", fx: "call", call: name,
+  lines: [`If you're a ${name} and you know it, ${doIt}!`, `If you're a ${name} and you know it, ${doIt}!`,
+          `If you're a ${name} and you know it, then your face will surely show it.`, `If you're a ${name} and you know it, ${doIt}!`] });
+// callAfter: the real animal answers once the song ends
+const ANIMAL_SONGS = {
+  cow: farmSong("cow"),
+  dog: { tune: "bingo", call: "dog", lines: ["There was a farmer had a dog,", "and Bingo was his name-o.",
+         "B, I, N, G, O!", "B, I, N, G, O!", "", "B, I, N, G, O!", "And Bingo was his name-o!"] },
+  cat: { tune: "mary", call: "cat", callAfter: true, lines: ["I have a little cat,", "little cat, little cat.",
+         "I have a little cat, it has", "soft and fluffy fur."] },
+  duck: { tune: "london", call: "duck", callAfter: true, lines: ["Five little ducks went out one day,",
+          "over the hills and far away.", "Mother duck said quack, quack, quack,", "and all the little ducks came back!"] },
+  sheep: { tune: "twinkle", call: "sheep", callAfter: true, lines: ["Baa, baa, black sheep, have you any wool?",
+           "Yes sir, yes sir, three bags full!", "One for the master, one for the dame,", "and one for the little boy who lives down the lane."] },
+  lion: happyAnimal("lion", "give a roar"),
+  pig: happyAnimal("pig", "say oink oink"),
+  frog: { tune: "hotcross", call: "frog", callAfter: true, lines: ["Ribbit, ribbit, frog!", "Ribbit, ribbit, frog!",
+          "Hop, hop, hop, hop, jump, jump, jump, jump!", "Ribbit, ribbit, frog!"] },
+  owl: { tune: "twinkle", call: "owl", callAfter: true, lines: ["Hoo, hoo, little owl, up in the tree,",
+         "sitting there so quietly.", "When the stars come out at night,", "you open your eyes so big and bright!"] },
+  horse: { tune: "wheels", call: "horse", callAfter: true, lines: ["The horse on the farm goes clip, clip, clop,",
+           "clip, clip, clop, clip, clip, clop.", "The horse on the farm goes clip, clip, clop,", "neigh, says the horse!"] },
+  rooster: { tune: "mulberry", call: "rooster", callAfter: true, lines: ["This is the way the rooster crows,",
+             "rooster crows, rooster crows.", "This is the way the rooster crows,", "so early in the morning!"] },
+  bee: { tune: "rowrow", call: "bee", callAfter: true, lines: ["Buzz, buzz, busy bee,", "flying to the flowers.",
+         "Making honey, sweet and yummy,", "buzz, buzz, buzz, buzz, buzz!"] },
+};
 const fruitSong = (name, color) => { const f = `${color.toLowerCase()} ${name.toLowerCase()}`;
   return { tune: "mulberry", lines: [`Do you like the ${f},`, `${name.toLowerCase()}, ${name.toLowerCase()}?`, `Do you like the ${f}?`, "Yum, yum, yum, yum, yum!"] }; };
 const colorSong = (name, thing) => ({ tune: "mulberry",
@@ -778,7 +821,7 @@ const TOPICS = [
       const [name, emoji, sound] = ANIMALS[i];
       return { hue: i * 30, big: "", small: "", visual: `<span class="stagehold">${act(emoji, name)}<span class="bubble" hidden>${sound.includes("doodle") ? "Cock-a-doodle-doo" : cap(sound)}!</span></span>`,
         word: `The ${name} says <b>${sound}</b>!`, speech: `The ${name} says…`,
-        afterSpeech: () => animalCall(name, sound), song: farmSong(name) };
+        afterSpeech: () => animalCall(name, sound), song: ANIMAL_SONGS[name] };
   }},
   { id: "day", label: "🪥 My Day", size: ACTIONS.length, card(i) {
       const [name, pose, things, extra, when, why, turn, sfx] = ACTIONS[i];
@@ -1056,13 +1099,14 @@ function play(c, { fresh = true } = {}) {
 function sing(song, withCheer) {
   const T = TUNES[song.tune];
   let t = 350;
-  T.lines.forEach((notesStr, k) => {
+  const tuneLines = song.callAfter ? [...T.lines, "R:6"] : T.lines;
+  tuneLines.forEach((notesStr, k) => {
     const notes = parseNotes(notesStr), text = song.lines[k] || "";
     const start = t, words = text ? text.split(/\s+/) : [];
     const sounding = notes.filter(n => n[0] !== null).reduce((n, x) => n + x[1], 0) * T.beat;
     later(() => {
       if (text) { lyric(words); say({ text, rate: 0.95, pitch: 1.15 }); }
-      if (!text && song.call) animalCall(song.call, ANIMAL_WORDS[song.call]);   // the real animal answers
+      if (!text && song.call) animalCall(song.call, ANIMAL_WORDS[song.call], 2.4);   // the real animal answers
     }, start);
     words.forEach((_, j) => later(() => lightWord(j), start + j / words.length * sounding));
     for (const [m, beats] of notes) {
@@ -1072,7 +1116,7 @@ function sing(song, withCheer) {
           note(m, T.inst, beats * T.beat / 1000 * 0.9, 0.55);
           const bar = BAR_MIDI.indexOf(m); if (bar >= 0) flashBar(bar);
           restart($("word"), "beat");
-        } else if (song.fx) songFx(song.fx, T.beat);
+        } else if (song.fx) songFx(song.fx, T.beat, song);
       }, at);
       t += beats * T.beat;
     }
@@ -1080,8 +1124,11 @@ function sing(song, withCheer) {
   });
   later(() => { if (withCheer) { giveSticker(); say(["You got a sticker!", ...(childName ? [cheer()] : [])]); } }, t + 300);
 }
-function songFx(fx, beat) {
-  if (fx === "clap") { clapSound(); later(clapSound, beat); }
+let lastFx = 0;
+function songFx(fx, beat, song) {
+  if (fx === "call") {                 // one real animal call per gap, kept short
+    if (Date.now() - lastFx > beat * 1.5) { lastFx = Date.now(); animalCall(song.call, ANIMAL_WORDS[song.call], 1.6); }
+  } else if (fx === "clap") { clapSound(); later(clapSound, beat); }
   else if (fx === "boing") { boing(); later(boing, beat); }
   else { note(96, "musicbox", 0.3, 0.8); later(() => note(100, "musicbox", 0.3, 0.8), beat); }
 }
@@ -1139,7 +1186,7 @@ function stopCall() {
   callId++;
   if (call) { try { call.stop(); } catch {} call = null; }
 }
-function animalCall(name, sound) {
+function animalCall(name, sound, maxSec = 5) {
   const id = ++callId, bubble = $("visual").querySelector(".bubble");
   const showBubble = () => { if (bubble && bubble.hidden) { bubble.hidden = false; restart(bubble, "pop"); } };
   loadCall(name).then(buf => {
@@ -1151,9 +1198,9 @@ function animalCall(name, sound) {
     const srcs = (twice ? [0, buf.duration + 0.05] : [0]).map(at => {
       const s = a.createBufferSource(); s.buffer = buf; s.connect(g); s.start(t + at); return s;
     });
-    g.gain.setValueAtTime(0.9, t + 5);                // keep calls short: fade out after 5 s
-    g.gain.linearRampToValueAtTime(0, t + 5.6);
-    srcs.forEach(s => s.stop(t + 5.7));
+    g.gain.setValueAtTime(0.9, t + maxSec);           // keep calls short: fade out
+    g.gain.linearRampToValueAtTime(0, t + maxSec + 0.6);
+    srcs.forEach(s => s.stop(t + maxSec + 0.7));
     call = { stop: () => srcs.forEach(s => s.stop()) };
     showBubble();
   }).catch(() => {                                  // Mac app: play the file directly
@@ -1161,7 +1208,7 @@ function animalCall(name, sound) {
     const el = new Audio(`sounds/${name}.mp3`);
     el.onplaying = showBubble;
     el.onerror = () => { if (id === callId) { showBubble(); say(`${sound}.`); } };
-    el.play().then(() => { call = { stop: () => el.pause() }; later(() => { if (call && id === callId) stopCall(); }, 5000); })
+    el.play().then(() => { call = { stop: () => el.pause() }; later(() => { if (call && id === callId) stopCall(); }, maxSec * 1000); })
       .catch(() => el.onerror());
   });
 }
