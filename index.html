@@ -609,6 +609,8 @@
       <li><b>Other keys</b> animal sounds</li>
       <li><b>, . / ; ' [ ]</b> my day: eat, sleep, wash…</li>
       <li><b>` - = \</b> fruits</li>
+      <li><b>👀 Body</b> eyes, nose, hands… copy me!</li>
+      <li><b>🏠 Things</b> cup, spoon, door, key…</li>
       <li><b>🔍 Find it</b> "Where is the…?" games</li>
       <li><b>🧠 Games</b> memory, sorting, what comes next</li>
       <li><b>🎹 Piano</b> tap the Piano button; letter keys play it</li>
@@ -723,6 +725,37 @@ const FRUITS = [
   ["Blueberries","🫐","Blue","Blueberries are tiny and blue.","Pop one in your mouth!"],
 ];
 
+// Body: [name, picture, what it does, copy me, plural?]
+const BODY = [
+  ["Head", "🙂", "We nod our head yes, and shake it no.", "Can you nod your head?"],
+  ["Hair", "💇", "Hair grows on top of our head.", "Can you touch your hair?"],
+  ["Eyes", "👀", "We see with our eyes.", "Can you blink your eyes?", true],
+  ["Ears", "👂", "We hear with our ears.", "Can you touch your ears?", true],
+  ["Nose", "👃", "We smell with our nose.", "Can you touch your nose?"],
+  ["Mouth", "👄", "We eat and talk with our mouth.", "Can you open your mouth wide?"],
+  ["Teeth", "🦷", "We chew with our teeth.", "Can you show me your teeth?", true],
+  ["Tongue", "👅", "We taste with our tongue.", "Can you stick out your tongue?"],
+  ["Hands", "👐", "We hold and clap with our hands.", "Can you clap your hands?", true],
+  ["Fingers", "🖐️", "We have ten fingers.", "Can you wiggle your fingers?", true],
+  ["Arms", "💪", "We hug with our arms.", "Can you stretch your arms up high?", true],
+  ["Legs", "🦵", "We walk and run with our legs.", "Can you march your legs?", true],
+  ["Feet", "🦶", "We stand on our feet.", "Can you stamp your feet?", true],
+  ["Toes", "🦶", "We have ten toes.", "Can you touch your toes?", true],
+];
+// Things around the house: [name, picture, what we use it for]
+const THINGS = [
+  ["Cup", "🥤", "We drink from a cup."], ["Spoon", "🥄", "We eat with a spoon."], ["Fork", "🍴", "We eat with a fork."],
+  ["Plate", "🍽️", "We put our food on a plate."], ["Bowl", "🥣", "We eat soup and cereal from a bowl."],
+  ["Chair", "🪑", "We sit on a chair."], ["Bed", "🛏️", "We sleep in a bed."], ["Door", "🚪", "We open and close the door."],
+  ["Window", "🪟", "We look outside through the window."], ["Clock", "🕰️", "A clock tells us the time."],
+  ["Phone", "📱", "We call grandma on the phone."], ["Key", "🔑", "A key opens the door."],
+  ["Light", "💡", "A light helps us see at night."], ["Toothbrush", "🪥", "We brush our teeth with a toothbrush."],
+  ["Soap", "🧼", "We wash our hands with soap."], ["Towel", "🧺", "We dry ourselves with a towel."],
+  ["Hat", "🧢", "We wear a hat on our head."], ["Socks", "🧦", "We wear socks on our feet."],
+  ["Jacket", "🧥", "We wear a jacket when it is cold."], ["Bag", "🎒", "We carry things in a bag."],
+  ["Umbrella", "☂️", "An umbrella keeps us dry in the rain."], ["Glasses", "👓", "Glasses help us see."],
+  ["Ball", "⚽", "We kick and throw a ball."], ["Book", "📖", "We read a book."],
+];
 const FRUIT_HEX = { "Red": "#ff6b6b", "Yellow": "#ffd84d", "Orange": "#ffa04d", "Purple": "#b07cff",
   "Green": "#7fd96b", "Green and red": "#7fd96b", "Blue": "#6aa8ff" };
 
@@ -1024,6 +1057,19 @@ const TOPICS = [
           { text: turn, onstart: () => { setDetail(turn); if (sfx === "clap") claps(3); } }],
         song: DAY_SONGS[name], afterSpeech: () => showDidIt() };
   }},
+  { id: "body", label: "👀 Body", size: BODY.length, card(i) {
+      const [name, emoji, what, turn] = BODY[i];
+      return { hue: i * 25 + 330, big: "", small: "", when: "🧒 My body", detail: what,
+        visual: scene(act(emoji, "breathe"), ["✨", "fx-pop"]), word: `<b>${name}</b>`,
+        speech: [`${name}.`, { text: what, onstart: () => setDetail(what) }, { text: turn, onstart: () => setDetail(turn) }],
+        afterSpeech: () => showDidIt() };
+  }},
+  { id: "things", label: "🏠 Things", size: THINGS.length, card(i) {
+      const [name, emoji, what] = THINGS[i];
+      return { hue: i * 15 + 20, big: "", small: "", when: "🏠 At home", detail: what,
+        visual: scene(act(emoji, MOTION[name] || "float"), ["✨", "fx-pop"]), word: `<b>${name}</b>`,
+        speech: [`${name}.`, { text: what, onstart: () => setDetail(what) }] };
+  }},
   { id: "fruits", label: "🍎 Fruits", size: FRUITS.length, card(i) {
       const [name, emoji, color, fact, turn] = FRUITS[i];
       return { hue: i * 27 + 10, big: "", small: "", when: `🎨 ${color}`, detail: fact,
@@ -1118,7 +1164,8 @@ window.__spoke = id => { if (nativeSpeech?.id === id) { const f = nativeSpeech.d
 // Each step plays its natural recording if the game has one (voice/), otherwise
 // the device voice reads it. Steps run one after another; a new say() stops the old one.
 let stopNow = null;
-const plain = t => t.replace(/«(.)»/g, "$1").replace(/\s+/g, " ").trim().toLowerCase();
+const noEmoji = t => (t || "").replace(/[\p{Extended_Pictographic}\uFE0F\u200D\u2600-\u27BF\u2B50]/gu, "").replace(/\s+/g, " ").trim();
+const plain = t => noEmoji(t).replace(/«(.)»/g, "$1").replace(/\s+/g, " ").trim().toLowerCase();
 const recordingFor = t => window.VOICE?.[plain(t)];
 function say(list, done) {
   const id = ++speechId, segs = steps(list);
@@ -1998,12 +2045,20 @@ const POOLS = {
     q: `Where is the ${n}?`, yes: `Yes! That's the ${n}!`, that: `That's the ${n}.` })),
   fruits: () => FRUITS.map(([n, e]) => ({ key: `fruit:${n}`, html: `<span class="qemoji">${e}</span>`,
     q: `Where is the ${n.toLowerCase()}?`, yes: `Yes! That's the ${n.toLowerCase()}!`, that: `That's the ${n.toLowerCase()}.` })),
+  body: () => BODY.filter(([n], k) => BODY.findIndex(b => b[1] === BODY[k][1]) === k).map(([n, e, , , pl]) => ({ key: `body:${n}`,
+    html: `<span class="qemoji">${e}</span>`,
+    q: `Where ${pl ? "are" : "is"} the ${n.toLowerCase()}?`, yes: `Yes! ${pl ? "Those are" : "That's"} the ${n.toLowerCase()}!`,
+    that: `${pl ? "Those are" : "That's"} the ${n.toLowerCase()}.` })),
+  things: () => THINGS.map(([n, e]) => ({ key: `thing:${n}`, html: `<span class="qemoji">${e}</span>`,
+    q: `Where is the ${n.toLowerCase()}?`, yes: `Yes! That's the ${n.toLowerCase()}!`, that: `That's the ${n.toLowerCase()}.` })),
   tools: () => TOOLS.map(([n, e, q]) => ({ key: `tool:${n}`, html: `<span class="qemoji">${e}</span>`,
     q, yes: `Yes! The ${n}!`, that: `That's the ${n}.` })),
 };
-const QUIZ_POOL = { abc: "letters", "123": "numbers", colors: "colors", shapes: "shapes", animals: "animals", fruits: "fruits", day: "tools" };
+const QUIZ_POOL = { abc: "letters", "123": "numbers", colors: "colors", shapes: "shapes", animals: "animals", fruits: "fruits", day: "tools", body: "body", things: "things" };
 // The pool item a learning card shows (so quizzes ask about things just seen)
 function seenKey(id, i) {
+  if (id === "body") return `body:${BODY[i][0]}`;
+  if (id === "things") return `thing:${THINGS[i][0]}`;
   if (id === "abc") return `abc:${LETTER_KEYS[i]}`;
   if (id === "123") return `num:${i + 1}`;
   if (id === "colors") return `color:${COLORS[i][0]}`;
@@ -2163,7 +2218,7 @@ const GAME_KINDS = [() => makeQuiz("animals", [], "sound"), makeSort, makeNext, 
 // Find it: mixed review, words missed before come back first
 function makeReview() {
   const due = Object.keys(stats).filter(isDue);
-  const byPool = { abc: "letters", num: "numbers", color: "colors", shape: "shapes", animal: "animals", fruit: "fruits", tool: "tools" };
+  const byPool = { abc: "letters", num: "numbers", color: "colors", shape: "shapes", animal: "animals", fruit: "fruits", tool: "tools", body: "body", thing: "things" };
   const pools = due.length && Math.random() < 0.6 ? [...new Set(due.map(k => byPool[k.split(":")[0]]).filter(Boolean))] : Object.keys(POOLS);
   return makeQuiz(pools[Math.floor(Math.random() * pools.length)], due);
 }
@@ -2190,6 +2245,8 @@ function tipFor(id, i) {
     case "shapes": return `Look for a ${SHAPES[i][0].toLowerCase()} at home and trace it in the air.`;
     case "animals": return `Ask: "What does the ${ANIMALS[i][0]} say?" Make the sound together.`;
     case "day": return `Do it together: ${ACTIONS[i][6]}`;
+    case "body": return `Point to your own ${BODY[i][0].toLowerCase()} and theirs: "My ${BODY[i][0].toLowerCase()}, your ${BODY[i][0].toLowerCase()}!"`;
+    case "things": return `Find a real ${THINGS[i][0].toLowerCase()} at home and let them hold it.`;
     case "fruits": return `Ask: "What color is the ${FRUITS[i][0].toLowerCase()}?" Do we have one at home?`;
     case "moves": return `Move your hands ${MOVES[i][1].toLowerCase()} together.`;
     case "music": return "Clap or dance along together.";
@@ -2303,14 +2360,32 @@ function exitGame() {
 }
 </script>
 <script>
-// Save the game on this device so it works offline from the home screen
+// Save the game on this device so it works offline from the home screen.
+// While an update downloads, the start screen says so; when it's ready the page
+// reloads itself (only on the start screen, never in the middle of play).
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
-  addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js");
-    navigator.serviceWorker.ready.then(() => {
-      document.querySelector("#setup .card")?.insertAdjacentHTML("beforeend",
-        '<small style="color:#2e9b57">✓ Saved on this device. Works without internet.</small>');
+  addEventListener("load", async () => {
+    const note = text => {
+      let el = document.getElementById("offlineNote");
+      if (!el) { document.querySelector("#setup .card")?.insertAdjacentHTML("beforeend", '<small id="offlineNote"></small>'); el = document.getElementById("offlineNote"); }
+      if (el) { el.textContent = text; el.style.color = text.startsWith("✓") ? "#2e9b57" : "#9a6b00"; }
+    };
+    const hadOld = !!navigator.serviceWorker.controller;
+    const reg = await navigator.serviceWorker.register("sw.js", { updateViaCache: "none" });
+    const watch = w => {
+      if (!w) return;
+      note(hadOld ? "⏳ Getting the latest version… keep the app open on Wi-Fi" : "⏳ Saving the game on this device…");
+      w.addEventListener("statechange", () => { if (w.state === "activated") note("✓ Saved on this device. Works without internet."); });
+    };
+    watch(reg.installing);
+    reg.addEventListener("updatefound", () => watch(reg.installing));
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (!hadOld) return;
+      if (!document.getElementById("setup")?.hidden) location.reload();     // on the start screen: load the new version now
+      else window.__updateReady = true;
     });
+    if (!reg.installing && !reg.waiting) navigator.serviceWorker.ready.then(() => note("✓ Saved on this device. Works without internet."));
+    reg.update().catch(() => {});
   });
 }
 </script>
