@@ -292,7 +292,36 @@
     font: 800 min(6vh, 7vw)/1 var(--display); color: var(--paper);
     text-shadow: 0 .08em 0 rgb(0 0 0 / .25); opacity: 0; transition: opacity .3s;
   }
-  #cheer.show { opacity: 1; animation: pop .6s cubic-bezier(.2, 1.6, .4, 1); }
+  #singBtn {
+    position: fixed; z-index: 5; right: calc(max(12px, env(safe-area-inset-right, 0px)) + 224px); top: calc(62px + env(safe-area-inset-top, 0px));
+    border: 0; background: rgb(255 255 255 / .75); border-radius: 18px; padding: 6px 12px 4px; cursor: pointer;
+    font: 800 15px/1 var(--display); color: var(--tone-dark); display: flex; align-items: center; gap: 5px;
+    box-shadow: 0 3px 0 rgb(0 0 0 / .1); transition: background .2s, transform .1s;
+    user-select: none; -webkit-user-select: none;
+  }
+  #singBtn span { font-size: 20px; }
+  #singBtn.on { background: #fff; color: var(--rose); box-shadow: 0 3px 0 rgba(212, 52, 104, 0.25); }
+  #singBtn:active { transform: translateY(2px); }
+  #lullabyBtn {
+    position: fixed; z-index: 5; right: calc(max(12px, env(safe-area-inset-right, 0px)) + 82px); top: calc(62px + env(safe-area-inset-top, 0px));
+    border: 0; background: rgb(255 255 255 / .75); border-radius: 18px; padding: 6px 12px 4px; cursor: pointer;
+    font: 800 15px/1 var(--display); color: var(--tone-dark); display: flex; align-items: center; gap: 5px;
+    box-shadow: 0 3px 0 rgb(0 0 0 / .1); transition: background .2s, transform .1s;
+    user-select: none; -webkit-user-select: none;
+  }
+  #lullabyBtn span { font-size: 20px; }
+  #lullabyBtn.on { background: #fff; color: var(--rose); box-shadow: 0 3px 0 rgba(212, 52, 104, 0.25); }
+  #lullabyBtn:active { transform: translateY(2px); }
+  body.voice-speaking #word { animation: wordSing .45s ease-in-out infinite alternate; }
+  body.voice-speaking #glyph { animation: glyphSing .55s ease-in-out infinite alternate; }
+  @keyframes wordSing {
+    0% { transform: scale(1) translateY(0); }
+    100% { transform: scale(1.05) translateY(-4px); }
+  }
+  @keyframes glyphSing {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-6px) scale(1.03); }
+  }
   #jar {
     position: fixed; z-index: 5; right: max(12px, env(safe-area-inset-right, 0px)); top: calc(62px + env(safe-area-inset-top, 0px));
     border: 0; background: rgb(255 255 255 / .7); border-radius: 18px; padding: 6px 10px 4px; cursor: pointer;
@@ -303,11 +332,70 @@
   #jar.got { animation: wobble .8s ease-in-out; }
   .flyer { position: fixed; z-index: 6; font-size: min(18vh, 28vw); pointer-events: none;
     transition: transform 1.1s cubic-bezier(.5, -0.3, .3, 1), font-size 1.1s ease-in; }
-  #stickers { position: fixed; inset: 0; z-index: 9; background: rgb(59 47 69 / .55); display: flex; align-items: center; justify-content: center; padding: 16px; }
-  #stickers .sheet { background: var(--paper); border-radius: 28px; padding: 22px; width: min(560px, 100%); max-height: 80vh; overflow: auto; text-align: center; }
-  #stickers h2 { margin: 0 0 12px; font: 800 30px/1 var(--display); color: var(--rose); }
-  #stickerGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 8px; font-size: 42px; }
+  #stickers { position: fixed; inset: 0; z-index: 9; background: rgb(59 47 69 / .55); display: flex; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(4px); }
+  #stickers .sheet { background: var(--paper); border-radius: 28px; padding: 22px; width: min(560px, 100%); max-height: 80vh; overflow: auto; text-align: center; box-shadow: 0 16px 36px rgba(0,0,0,0.22); }
+  #stickers h2 { margin: 0 0 8px; font: 800 28px/1 var(--display); color: var(--rose); }
+  #stickerGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 10px; font-size: 40px; padding: 8px 4px; }
+  .sticker-item {
+    cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 16px; background: rgba(255,255,255,0.7); padding: 4px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.06); transition: transform 0.18s cubic-bezier(0.3, 1.5, 0.5, 1);
+    user-select: none; -webkit-user-select: none; touch-action: manipulation;
+  }
+  .sticker-item:hover { transform: scale(1.18); background: #fff; }
+  .sticker-item:active { transform: scale(0.9); }
   #stickers p { color: var(--muted); margin: 14px 0 0; }
+
+  /* Interactive Floating Bubbles */
+  #bubbles { position: fixed; inset: 0; pointer-events: none; z-index: 4; overflow: hidden; }
+  .soap-bubble {
+    position: absolute; pointer-events: auto; cursor: pointer; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.25) 25%, rgba(180,225,255,0.45) 60%, rgba(255,190,240,0.65) 90%, rgba(255,255,255,0.85) 100%);
+    box-shadow: inset 0 0 14px rgba(255,255,255,0.8), 0 6px 16px rgba(100,160,255,0.3);
+    animation: floatUp var(--dur, 9s) linear forwards;
+    display: flex; align-items: center; justify-content: center; font-size: min(4.5vh, 26px);
+    touch-action: manipulation; transition: transform 0.15s cubic-bezier(0.3, 1.4, 0.5, 1);
+  }
+  .soap-bubble:active { transform: scale(1.3); }
+  .soap-bubble::after {
+    content: ""; position: absolute; top: 14%; left: 22%; width: 20%; height: 12%;
+    border-radius: 50%; background: rgba(255,255,255,0.92); transform: rotate(-30deg);
+  }
+  @keyframes floatUp {
+    0% { transform: translateY(105vh) translateX(0) scale(0.6); opacity: 0; }
+    10% { opacity: 0.95; transform: translateY(90vh) translateX(var(--drift, 12px)) scale(1); }
+    50% { transform: translateY(50vh) translateX(calc(var(--drift, 12px) * -1)) scale(1.05); }
+    90% { opacity: 0.9; }
+    100% { transform: translateY(-15vh) translateX(var(--drift, 12px)) scale(1); opacity: 0; }
+  }
+  .bubble-pop { animation: popBurst 0.22s ease-out forwards !important; }
+  @keyframes popBurst {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.4); opacity: 0.8; }
+    100% { transform: scale(1.8); opacity: 0; }
+  }
+
+  /* Tactile animations */
+  .squish { animation: squish 0.35s cubic-bezier(0.2, 1.5, 0.4, 1) !important; }
+  @keyframes squish {
+    0% { transform: scale(1); }
+    35% { transform: scale(1.25, 0.78); }
+    70% { transform: scale(0.88, 1.18); }
+    100% { transform: scale(1); }
+  }
+  .jiggle { animation: jiggle 0.45s ease-in-out !important; }
+  @keyframes jiggle {
+    0%, 100% { transform: rotate(0) scale(1); }
+    25% { transform: rotate(-12deg) scale(1.15); }
+    75% { transform: rotate(12deg) scale(1.15); }
+  }
+
+  /* Interactive Elements cursor & tactile feedback */
+  #glyph, #visual, #word { cursor: pointer; touch-action: manipulation; }
+  #glyph:active, #visual:active, #word:active { transform: scale(0.96); }
+  .count { cursor: pointer; touch-action: manipulation; transition: transform 0.15s, opacity 0.2s; }
+  .count:hover { transform: scale(1.15); }
+  .count:active { transform: scale(0.9); }
 
   /* ---------- Xylophone ---------- */
   #xylo {
@@ -339,6 +427,61 @@
     body.music .bar { font-size: 18px; }
   }
   @media (hover: hover) and (min-width: 701px) { #hint { display: none; } }
+
+  /* ---------- Find-it and thinking games ---------- */
+  .choices { display: grid; gap: min(3vw, 18px); justify-content: center; grid-template-columns: repeat(var(--cols, 2), auto); }
+  .choices.n3 { --cols: 3; } .choices.n4 { --cols: 4; }
+  @media (max-width: 560px) { .choices.n4 { --cols: 2; } .choices.n3 { --cols: 3; } }
+  .choice {
+    width: var(--cs); height: var(--cs); --cs: min(26vh, 40vw); border: 0; border-radius: 28px; cursor: pointer;
+    background: var(--paper); box-shadow: 0 .8vh 0 rgb(0 0 0 / .12); display: flex; align-items: center; justify-content: center;
+    font-size: calc(var(--cs) * .62); line-height: 1; padding: 0; transition: transform .15s, opacity .3s;
+  }
+  .choices.n3 .choice { --cs: min(22vh, 28vw); } .choices.n4 .choice { --cs: min(20vh, 40vw); }
+  @media (min-width: 561px) { .choices.n4 .choice { --cs: min(20vh, 20vw); } }
+  .choice:active { transform: scale(.95); }
+  .choice.right { transform: scale(1.12); box-shadow: 0 0 0 .8vh #7ed957, 0 .8vh 0 rgb(0 0 0 / .12); }
+  .choice.fade { opacity: .25; }
+  .choice.nope { animation: nope .5s ease; }
+  .choice.hintme { animation: hintme 1s ease-in-out 3; box-shadow: 0 0 0 .7vh #ffd21a, 0 .8vh 0 rgb(0 0 0 / .12); }
+  @keyframes nope { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+  @keyframes hintme { 0%,100% { transform: scale(1) rotate(0); } 25% { transform: scale(1.1) rotate(-6deg); } 75% { transform: scale(1.1) rotate(6deg); } }
+  .qtxt { font: 800 1em/1 var(--display); color: var(--tone); }
+  .qblob { width: 70%; height: 70%; border-radius: 50%; display: block; border: 6px solid rgb(0 0 0 / .06); }
+  .qshape { width: 72%; height: 72%; }
+  .qemoji { font-size: .9em; }
+  .qitem { font-size: min(16vh, 22vw); line-height: 1; margin-bottom: 1vh; }
+  .qitem .arrow { font-size: .5em; color: var(--tone-dark); vertical-align: middle; }
+  .basket { position: relative; display: inline-block; }
+  .basket::after { content: ""; position: absolute; left: 12%; right: 12%; top: 38%; height: 26%; border-radius: 8px; background: var(--b); opacity: .85; mix-blend-mode: multiply; }
+  .next, #didit {
+    margin-top: 1.6vh; border: 0; border-radius: 999px; padding: .5em 1.2em .35em; cursor: pointer;
+    font: 800 min(4.4vh, 6vw)/1 var(--display); color: #fff; background: var(--tone); box-shadow: 0 5px 0 var(--tone-dark);
+  }
+  .memory { display: grid; gap: min(2.5vw, 14px); grid-template-columns: repeat(var(--mc, 2), auto); justify-content: center; }
+  .memory.n6 { --mc: 3; }
+  .mcard { width: min(20vh, 28vw); height: min(20vh, 28vw); border: 0; border-radius: 22px; cursor: pointer;
+    background: var(--tone); box-shadow: 0 .6vh 0 var(--tone-dark); font-size: min(13vh, 18vw); line-height: 1; }
+  .mcard span { opacity: 0; transition: opacity .2s; }
+  .mcard::before { content: "❓"; font-size: .55em; }
+  .mcard.up { background: var(--paper); } .mcard.up::before { content: none; } .mcard.up span { opacity: 1; }
+  .mcard.matched { box-shadow: 0 0 0 .6vh #7ed957; }
+  #tip { font: 600 min(2.6vh, 15px)/1.35 var(--body); color: var(--tone-dark); opacity: .85; max-width: min(36em, 100%);
+    background: rgb(255 255 255 / .45); border-radius: 12px; padding: .4em .8em; }
+  #break { position: fixed; inset: 0; z-index: 9; display: flex; align-items: center; justify-content: center; padding: 16px;
+    background: radial-gradient(circle at 30% 20%, #c8f0ff, #ffd6f0) #e8e4ff; }
+  #break .sheet { background: var(--paper); border-radius: 30px; padding: 28px 24px; width: min(520px, 100%); text-align: center; box-shadow: 0 20px 60px rgb(0 0 0 / .14); }
+  #break h2 { margin: 6px 0; font: 800 34px/1.1 var(--display); color: var(--rose); }
+  #break p { margin: 6px 0; font-size: 18px; color: var(--muted); } #break .go { font: 800 22px/1.3 var(--display); color: var(--ink); }
+  .bigsticker { font-size: 90px; line-height: 1; animation: pop .6s cubic-bezier(.2, 1.6, .4, 1); }
+  #keepPlaying { margin-top: 16px; border: 0; border-radius: 16px; padding: 14px 18px; font: 700 16px/1 var(--body); color: var(--muted);
+    background: #f3eef5; cursor: pointer; background-image: linear-gradient(90deg, #ffd0e0 0 0); background-repeat: no-repeat; background-size: 0 100%; }
+  #keepPlaying.holding { background-size: 100% 100%; transition: background-size 1.5s linear; }
+  #break small { display: block; margin-top: 12px; color: var(--muted); }
+  .agenote { margin: 0 0 10px; color: var(--muted); font-size: 14px; }
+  .settings { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 4px; }
+  .settings label { display: flex; align-items: center; gap: 6px; font: 700 15px/1 var(--body); color: var(--muted); text-transform: none; letter-spacing: 0; margin: 0; }
+  .settings select { font: 700 15px/1 var(--body); padding: 6px 8px; border-radius: 10px; border: 2px solid #ffd0e0; background: #fff; color: var(--ink); }
 
   /* ---------- Piano ---------- */
   body.piano-mode #xylo, body.piano-mode #hint { display: none !important; }
@@ -421,13 +564,38 @@
   <div id="when" hidden></div>
   <div id="word"></div>
   <div id="detail" hidden></div>
+  <button id="didit" hidden>👏 We did it!</button>
+  <div id="tip" hidden></div>
 </main>
+<div id="bubbles"></div>
 <div id="cheer"></div>
+<button id="singBtn" aria-label="Toggle singing songs mode"><span>🎤</span><b>Sing: On</b></button>
+<button id="lullabyBtn" aria-label="Toggle soothing lullaby music"><span>🎵</span><b>Lullaby: On</b></button>
 <button id="jar" aria-label="Sticker jar"><span>🫙</span><b id="jarCount">0</b></button>
-<div id="stickers" hidden><div class="sheet"><h2 id="stickerTitle">My stickers</h2><div id="stickerGrid"></div><p>Tap anywhere to close</p></div></div>
+<div id="stickers" hidden>
+  <div class="sheet">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <h2 id="stickerTitle" style="margin:0;">My Stickers</h2>
+      <button id="closeStickers" aria-label="Close" style="border:0; background:#f0eaf4; border-radius:50%; width:38px; height:38px; font-weight:800; cursor:pointer; font-size:18px;">✕</button>
+    </div>
+    <div style="color:var(--muted); font-size:15px; margin-bottom:12px;">Tap any sticker to make it dance and squeak!</div>
+    <div id="stickerGrid"></div>
+    <div style="display:flex; gap:10px; justify-content:center; margin-top:16px;">
+      <button id="partyStickers" style="border:0; background:var(--rose); color:#fff; font:800 16px var(--display); padding:10px 22px; border-radius:999px; cursor:pointer; box-shadow:0 4px 0 var(--rose-dark);">🎉 Confetti Party!</button>
+    </div>
+  </div>
+</div>
 <div id="xylo"></div>
 <div id="hint">Tap to hear again · Swipe up for the next one</div>
 
+<div id="break" hidden><div class="sheet">
+  <div id="breakSticker" class="bigsticker"></div>
+  <h2>All done for now! 🌟</h2>
+  <p id="breakFinds"></p>
+  <p id="breakGo" class="go"></p>
+  <button id="keepPlaying">Grown-ups: hold to keep playing</button>
+  <small id="breakToday"></small>
+</div></div>
 <div id="setup">
   <div class="card">
     <h1>Tiny Keys</h1>
@@ -441,14 +609,23 @@
       <li><b>Other keys</b> animal sounds</li>
       <li><b>, . / ; ' [ ]</b> my day: eat, sleep, wash…</li>
       <li><b>` - = \</b> fruits</li>
+      <li><b>🔍 Find it</b> "Where is the…?" games</li>
+      <li><b>🧠 Games</b> memory, sorting, what comes next</li>
       <li><b>🎹 Piano</b> tap the Piano button; letter keys play it</li>
       <li><b>Phone</b> tap to repeat, swipe up for next</li>
       <li><b>Swipe sideways</b> change topic</li>
     </ul>
     <label for="name">Child's name</label>
     <input id="name" placeholder="e.g. Aarav" maxlength="20" autocomplete="off" spellcheck="false">
-    <label class="toggle"><input type="checkbox" id="sing" checked> 🎵 Sing the activities</label>
+    <p class="agenote">For 18 months and up, with a grown-up nearby.</p>
+    <div class="settings">
+      <label>Age <select id="age"><option value="1">Under 2</option><option value="2">2 to 3</option><option value="3">3 to 4</option></select></label>
+      <label>Play time <select id="sessionMin"><option value="5">5 min</option><option value="10">10 min</option><option value="15">15 min</option><option value="20">20 min</option><option value="0">No limit</option></select></label>
+    </div>
+    <label class="toggle"><input type="checkbox" id="tips"> 👪 Show tips for grown-ups</label>
+    <label class="toggle"><input type="checkbox" id="sing"> 🎵 Sing every activity (songs are always in 🎤 Sing-along)</label>
     <button id="go">Let's play!</button>
+    <small id="todayLine"></small>
     <small>Grown-ups: <kbd>Control</kbd> + <kbd>Option</kbd> + <kbd>Q</kbd> leaves the game.</small>
     <details class="credits">
       <summary>Animal sound credits</summary>
@@ -616,6 +793,21 @@ const SONGS = [
   ["Rain Rain Go Away","🌧️","🪵 Marimba · Gentle","marimba",420,"G5 E5:2 G5 G5 E5:2 G5 A5 G5 G5 E5 F5 G5 E5:2","calm"],
   ["Ode to Joy","🎻","🎹 Piano · Classical","piano",420,"E5 E5 F5 G5 G5 F5 E5 D5 C5 C5 D5 E5 E5:1.5 D5:0.5 D5:2","calm"],
   ["Up and Down the Scale","🪜","🎹 Piano · Learning","piano",330,"C5 D5 E5 F5 G5 A5 B5 C6:2 B5 A5 G5 F5 E5 D5 C5:2","happy"],
+  ["ABC Song","🔤","🔔 Xylophone · Learning","xylophone",420,"C5 C5 G5 G5 A5 A5 G5:2 F5 F5 E5 E5 D5:0.5 D5:0.5 D5:0.5 D5:0.5 C5:2 G5 G5 F5:2 E5 E5 D5:2 G5 G5 F5:2 E5 E5 D5:2 C5 C5 G5 G5 A5 A5 G5:2 F5 F5 E5 E5 D5 D5 C5:2","happy"],
+  ["Baa Baa Black Sheep","🐑","🪵 Marimba · Nursery","marimba",440,"C5 C5 G5 G5 A5:0.5 A5:0.5 A5:0.5 A5:0.5 G5:2 F5 F5 E5 E5 D5 D5 C5:2","happy"],
+  ["If You're Happy and You Know It","😊","🪵 Marimba · Happy","marimba",340,"G4 G4 C5 C5 C5 C5 C5 B4 C5 D5:2 R:2 G4 G4 D5 D5 D5 D5 D5 C5 D5 E5:2 R:2 E5 E5 F5 F5 F5 F5 A5 A5 F5 F5 E5 E5 D5 D5 C5:2","happy"],
+  ["Itsy Bitsy Spider","🕷️","🎹 Piano · Nursery","piano",360,"G4 C5 C5 C5 D5 E5:1.5 E5:0.5 E5 D5 C5 D5 E5 C5:2 E5 E5 F5 G5:2 G5 F5 E5 F5 G5 E5:2","happy"],
+  ["Are You Sleeping","🔔","🎶 Music box · Gentle","musicbox",440,"C5 D5 E5 C5 C5 D5 E5 C5 E5 F5 G5:2 E5 F5 G5:2 G5:0.5 A5:0.5 G5:0.5 F5:0.5 E5 C5 G5:0.5 A5:0.5 G5:0.5 F5:0.5 E5 C5 C5 G4 C5:2 C5 G4 C5:2","calm"],
+  ["Bingo","🐶","🪵 Marimba · Farm song","marimba",330,"G4 C5 C5 G4 G4 A4 A4 G4:2 G4 C5 C5 D5 D5 E5 C5:3 E5:2 E5:2 F5:2 F5:2 F5:2 D5:2 D5:2 E5:2 E5:2 E5:2 C5:2 C5:2 D5:2 D5:2 D5:2 B4 G4 A4 B4 C5:3","happy"],
+  ["Pop Goes the Weasel","🎁","🔔 Xylophone · Happy","xylophone",300,"C5 C5:0.5 D5:0.5 D5 E5:0.5 G5:0.5 E5 C5 C5 C5:0.5 D5:0.5 D5 E5:2 C5 C5 C5:0.5 D5:0.5 D5 E5:0.5 G5:0.5 E5 C5:2 A5 D5 F5 E5 C5:2","happy"],
+  ["Yankee Doodle","🎩","🪈 Flute · Happy","flute",300,"C5 C5 D5 E5 C5 E5 D5 G4 C5 C5 D5 E5 C5:2 B4:2 C5 C5 D5 E5 F5 E5 D5 C5 B4 G4 A4 B4 C5:2 C5:2","happy"],
+  ["Skip to My Lou","👟","🪵 Marimba · Happy","marimba",330,"E5 E5 C5 C5 E5 E5 G5:2 D5 D5 B4 B4 D5 D5 F5:2 E5 E5 C5 C5 E5 E5 G5:2 D5 E5 F5 E5 D5 C5:3","happy"],
+  ["Rock-a-bye Baby","👶","🎶 Music box · Lullaby","musicbox",470,"E5:1.5 G5:0.5 E5:2 D5:1.5 E5:0.5 F5:2 D5:1.5 F5:0.5 D5:2 C5:1.5 D5:0.5 E5:2 E5:1.5 G5:0.5 E5:2 D5:1.5 E5:0.5 F5:2 G5:1.5 F5:0.5 E5 D5 C5:3","calm"],
+  ["Hickory Dickory Dock","🕰️","🔔 Xylophone · Nursery","xylophone",320,"C5 D5 E5 F5 G5:2 G5 A5 G5 F5 E5:2 E5 F5 G5 A5 G5:2 C6 B5 A5 G5 C5:3","happy"],
+  ["The Farmer in the Dell","🧑‍🌾","🪈 Flute · Farm song","flute",340,"G4 C5 C5 C5 C5:2 C5 D5 E5 E5 E5:2 E5 G5 G5 A5 G5 E5 C5 D5 E5 E5 D5 D5 C5:3","happy"],
+  ["Morning Mood","🌅","🪈 Flute · Classical","flute",420,"G5 E5 D5 C5 D5 E5 G5 E5 D5 C5 D5:0.5 E5:0.5 D5:0.5 E5:0.5 G5 E5 G5 A5 E5 A5 G5 E5 D5 C5:3","calm"],
+  ["Minuet in G","🎻","🎹 Piano · Classical","piano",380,"D5 G4:0.5 A4:0.5 B4:0.5 C5:0.5 D5 G4 G4 E5 C5:0.5 D5:0.5 E5:0.5 F#5:0.5 G5 G4 G4 C5 D5:0.5 C5:0.5 B4:0.5 A4:0.5 B4 C5:0.5 B4:0.5 A4:0.5 G4:0.5 A4:3","calm"],
+  ["Für Elise","🎼","🎹 Piano · Classical","piano",300,"E6:0.5 D#6:0.5 E6:0.5 D#6:0.5 E6:0.5 B5:0.5 D6:0.5 C6:0.5 A5 R:0.5 C5:0.5 E5:0.5 A5:0.5 B5 R:0.5 E5:0.5 G#5:0.5 B5:0.5 C6:2","calm"],
 ];
 const INSTRUMENTS = {
   piano: ["piano", "A piano has black and white keys. We press them to make music."],
@@ -754,7 +946,7 @@ const SHAPE_FACTS = { Circle: "round and round and round", Square: "four sides, 
   Diamond: "pointy at the top" };
 const shapeSong = name => ({ tune: "mulberry",
   lines: [`Look at the ${name.toLowerCase()}, the ${name.toLowerCase()},`, `${SHAPE_FACTS[name]}.`, `Look at the ${name.toLowerCase()},`, "draw it in the air!"] });
-let singing = true;
+let singing = true;   // cards play with catchy music and sing-song child voice
 try { singing = localStorage.getItem("sing") !== "off"; } catch {}
 
 
@@ -830,7 +1022,7 @@ const TOPICS = [
         speech: [`${name}.`,
           { text: why, onstart: () => setDetail(why) },
           { text: turn, onstart: () => { setDetail(turn); if (sfx === "clap") claps(3); } }],
-        song: DAY_SONGS[name] };
+        song: DAY_SONGS[name], afterSpeech: () => showDidIt() };
   }},
   { id: "fruits", label: "🍎 Fruits", size: FRUITS.length, card(i) {
       const [name, emoji, color, fact, turn] = FRUITS[i];
@@ -842,19 +1034,25 @@ const TOPICS = [
           { text: turn, onstart: () => setDetail(turn) }],
         song: fruitSong(name, color) };
   }},
+  { id: "find", label: "🔍 Find it", size: 60, card: () => makeReview() },
+  { id: "games", label: "🧠 Games", size: 40, card: i => GAME_KINDS[i % GAME_KINDS.length]() },
   { id: "moves", label: "↕️ Up Down", size: MOVES.length, card(i) {
       const [, name, emoji, line, move] = MOVES[i];
       return { hue: i * 90 + 20, big: "", small: "",
         visual: `<span class="mover" style="--move:${move}">${emoji}</span>`,
         word: `<b>${name}</b>`, speech: `${name}. ${line}` };
   }},
+  { id: "sing", label: "🎤 Sing-along", size: 0, card(i) {
+      const [tid, j] = SING_ALONG[i];
+      const c = TOPICS.find(t => t.id === tid).card(j);
+      return { ...c, alwaysSing: true, when: `🎤 ${tid === "animals" ? "Animal song" : "My day song"}` };
+  }},
   { id: "music", label: "🎵 Music", size: SONGS.length, card(i) {
       const [name, emoji, style, inst, , , mood] = SONGS[i], [instName, fact] = INSTRUMENTS[inst];
       const lullaby = style.includes("Lullaby");
       return { hue: i * 26 + 250, big: "", small: "", when: style, detail: fact, word: `<b>${name}</b>`,
         visual: scene(baby(lullaby ? "sleep" : mood === "calm" ? "sing" : "dance", lullaby ? { face: "sleepy" } : mood === "calm" ? { prop: "🎤" } : { face: "open" }), [emoji, "fx-rise"]),
-        speech: [`${name}.`, { text: `Listen to the ${instName}.`, onstart: () => setDetail(fact) }],
-        afterSpeech: () => playSong(i) };
+        speech: [], afterSpeech: () => playSong(i) };     // just the music, no talking
   }},
   { id: "piano", label: "🎹 Piano", size: PIANO_SONGS.length, card(i) {
       const [name, notes] = PIANO_SONGS[i];
@@ -868,6 +1066,8 @@ const TOPICS = [
   }},
 ];
 function cap(w) { return w[0].toUpperCase() + w.slice(1); }
+const SING_ALONG = [...ANIMALS.map((_, i) => ["animals", i]), ...ACTIONS.map((_, i) => ["day", i])];
+TOPICS.find(t => t.id === "sing").size = SING_ALONG.length;
 function hueOf(hex, i) {
   const [r, g, b] = [1, 3, 5].map(k => parseInt(hex.slice(k, k + 2), 16) / 255);
   const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
@@ -923,16 +1123,20 @@ const recordingFor = t => window.VOICE?.[plain(t)];
 function say(list, done) {
   const id = ++speechId, segs = steps(list);
   stopVoice();
+  speechActive = true;
+  document.body.classList.add("voice-speaking");
   (async () => {
     for (const seg of segs) {
-      if (id !== speechId) return;
+      if (id !== speechId) { speechActive = false; document.body.classList.remove("voice-speaking"); return; }
       seg.onstart?.();
       await speakOne(seg, id);
     }
-    if (id === speechId) done?.();
+    if (id === speechId) { speechActive = false; document.body.classList.remove("voice-speaking"); done?.(); }
   })();
 }
 function stopVoice() {
+  speechActive = false;
+  document.body.classList.remove("voice-speaking");
   const f = stopNow; stopNow = null; f?.();
   nativeSpeech = null;
   if (isNative) window.webkit.messageHandlers.speak.postMessage({ id: speechId, steps: [] });
@@ -961,9 +1165,20 @@ async function playVoice(file, end) {
   }
   if (stopNow !== end) return;           // cut off while loading
   const a = audio(); a.resume?.();
-  const src = a.createBufferSource(); src.buffer = buf; src.connect(a.destination);
-  src.onended = end; src.start();
-  stopNow = () => { try { src.stop(); } catch {} end(); };
+  const src = a.createBufferSource(); src.buffer = buf;
+  const gain = a.createGain();
+  gain.gain.setValueAtTime(1.05, a.currentTime);
+  src.connect(gain);
+  gain.connect(getMaster());
+  src.onended = end;
+  src.start();
+  stopNow = () => {
+    try {
+      gain.gain.linearRampToValueAtTime(0.001, a.currentTime + 0.04);
+      setTimeout(() => { try { src.stop(); } catch {} }, 45);
+    } catch {}
+    end();
+  };
 }
 function speakDevice(seg, id, end) {
   const total = seg.text.length;
@@ -985,7 +1200,7 @@ function speakDevice(seg, id, end) {
     parts.forEach((t, k) => {
       const u = new SpeechSynthesisUtterance(t);
       if (voice) u.voice = voice;
-      u.rate = seg.rate ?? 0.78; u.pitch = seg.pitch ?? 1.0; u.volume = 0.85;
+      u.rate = seg.rate ?? 0.88; u.pitch = seg.pitch ?? 1.45; u.volume = 0.9;   // higher, younger-sounding fallback
       if (k === parts.length - 1) u.onend = u.onerror = end;
       speechSynthesis.speak(u);
     });
@@ -1002,24 +1217,66 @@ function loadSound(url) {
 // Recorded-voice index (voice/index.js sets window.VOICE); missing = device voice only
 (() => { const sc = document.createElement("script"); sc.src = "voice/index.js"; sc.onerror = () => {}; document.head.appendChild(sc); })();
 
-let actx;
+let actx, masterBus = null;
 function audio() { return actx || (actx = new (window.AudioContext || window.webkitAudioContext)()); }
-function tone(freq, dur = 1.2, vol = 0.2, at = 0) {
+function getMaster() {
+  if (!masterBus) {
+    const a = audio();
+    const filter = a.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = 3000; // soft velvety warmth, eliminates digital harshness
+    filter.Q.value = 0.65;
+    const comp = a.createDynamicsCompressor();
+    comp.threshold.value = -16; comp.knee.value = 12; comp.ratio.value = 2.8;
+    comp.attack.value = 0.01; comp.release.value = 0.25;
+    filter.connect(comp);
+    comp.connect(a.destination);
+    masterBus = filter;
+  }
+  return masterBus;
+}
+function tone(freq, dur = 1.2, vol = 0.18, at = 0) {
   const a = audio(), t = a.currentTime + at;
   const o = a.createOscillator(), o2 = a.createOscillator(), g = a.createGain(), g2 = a.createGain();
-  o.frequency.value = freq; o2.frequency.value = freq * 4; g2.gain.value = 0.15; // bright overtone, like a metal bar
-  o2.connect(g2).connect(g); o.connect(g).connect(a.destination);
-  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.005);
-  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  o.type = "sine"; o2.type = "sine";
+  o.frequency.value = freq; o2.frequency.value = freq * 3; g2.gain.value = 0.1;
+  o2.connect(g2).connect(g); o.connect(g).connect(getMaster());
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.008);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
   o.start(t); o2.start(t); o.stop(t + dur); o2.stop(t + dur);
 }
 function boing() {
   const a = audio(), t = a.currentTime, o = a.createOscillator(), g = a.createGain();
-  o.type = "triangle";
-  o.frequency.setValueAtTime(300 + Math.random() * 300, t);
-  o.frequency.exponentialRampToValueAtTime(900 + Math.random() * 400, t + 0.15);
-  g.gain.setValueAtTime(0.1, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
-  o.connect(g).connect(a.destination); o.start(t); o.stop(t + 0.3);
+  o.type = "sine";
+  o.frequency.setValueAtTime(320 + Math.random() * 200, t);
+  o.frequency.exponentialRampToValueAtTime(800 + Math.random() * 250, t + 0.16);
+  g.gain.setValueAtTime(0.12, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+  o.connect(g).connect(getMaster()); o.start(t); o.stop(t + 0.28);
+}
+function popSound() {
+  const a = audio(), t = a.currentTime, o = a.createOscillator(), g = a.createGain();
+  o.type = "sine";
+  o.frequency.setValueAtTime(560 + Math.random() * 120, t);
+  o.frequency.exponentialRampToValueAtTime(1180 + Math.random() * 140, t + 0.06);
+  g.gain.setValueAtTime(0.16, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.075);
+  o.connect(g).connect(getMaster());
+  o.start(t); o.stop(t + 0.075);
+}
+function sparkleSound() {
+  const notes = [72, 76, 79, 84, 88];
+  notes.forEach((m, i) => later(() => note(m, "celeste", 0.45, 0.28), i * 55));
+}
+function cheerFanfare() {
+  [72, 76, 79, 84].forEach((m, i) => later(() => note(m, "celeste", 0.6, 0.4), i * 110));
+}
+function crunchSound() {
+  const a = audio(), t = a.currentTime, len = 0.14;
+  const buf = a.createBuffer(1, Math.floor(a.sampleRate * len), a.sampleRate), d = buf.getChannelData(0);
+  for (let j = 0; j < d.length; j++) d[j] = (Math.random() * 2 - 1) * Math.sin(j * 0.08) * Math.pow(1 - j / d.length, 2);
+  const src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+  f.type = "bandpass"; f.frequency.value = 2200; f.Q.value = 1.1; g.gain.value = 0.28;
+  src.buffer = buf; src.connect(f).connect(g).connect(getMaster()); src.start(t);
 }
 
 /* ================= Confetti ================= */
@@ -1051,7 +1308,140 @@ function burst(x, y, n = 40, emoji) {
   requestAnimationFrame(tick);
 })();
 
-/* ================= Rendering ================= */
+/* ================= Rendering & Interactivity ================= */
+const PHONICS = {
+  A: "ah", B: "buh", C: "cuh", D: "duh", E: "eh", F: "fff", G: "guh", H: "huh",
+  I: "ih", J: "juh", K: "kuh", L: "lll", M: "mmm", N: "nnn", O: "ah", P: "puh",
+  Q: "kwuh", R: "rrr", S: "sss", T: "tuh", U: "uh", V: "vvv", W: "wuh", X: "ks",
+  Y: "yuh", Z: "zzz"
+};
+
+function setupInteractivity() {
+  if (current?.quiz) { $("glyph").onclick = $("visual").onclick = $("word").onclick = null; return; }   // games handle their own taps
+  const g = $("glyph");
+  g.onclick = e => {
+    e.stopPropagation();
+    restart(g, "squish");
+    sparkleSound();
+    burst(e.clientX, e.clientY, 18, "⭐");
+    const L = current?.big;
+    if (L && PHONICS[L]) {
+      say(current.speech);
+    } else if (current?.big && !isNaN(+current.big)) {
+      say(NUMBER_WORDS[+current.big] || current.big);
+    }
+  };
+
+  const v = $("visual");
+  v.onclick = e => {
+    if (e.target.closest(".count")) return;
+    e.stopPropagation();
+    restart(v, "squish");
+    burst(e.clientX, e.clientY, 18);
+    const tp = TOPICS[topic]?.id;
+    if (tp === "animals") {
+      const [name, , sound] = ANIMALS[index];
+      animalCall(name, sound);
+    } else if (tp === "fruits") {
+      crunchSound();
+      burst(e.clientX, e.clientY, 20, "🍎");
+      say(current.speech);
+    } else if (tp === "day") {
+      boing();
+      const b = v.querySelector(".baby");
+      if (b) restart(b, "jiggle");
+      say(current.speech);
+    } else if (tp === "colors") {
+      sparkleSound();
+      burst(e.clientX, e.clientY, 25);
+    } else if (tp === "shapes") {
+      sparkleSound();
+      const [name] = SHAPES[index];
+      say(`A lovely ${name.toLowerCase()}!`);
+    } else {
+      boing();
+      repeat();
+    }
+  };
+
+  const w = $("word");
+  w.onclick = e => {
+    e.stopPropagation();
+    restart(w, "squish");
+    sparkleSound();
+    burst(e.clientX, e.clientY, 16, "🎵");
+    if (current?.speech) {
+      say(current.speech);
+    }
+  };
+
+  v.querySelectorAll(".count").forEach((el, j) => {
+    el.onclick = e => {
+      e.stopPropagation();
+      if (!el.classList.contains("on")) {
+        countOne(j);
+        burst(e.clientX, e.clientY, 14, "⭐");
+        restart(el, "squish");
+        say(NUMBER_WORDS[j + 1]);
+        const allOn = [...v.querySelectorAll(".count")].every(x => x.classList.contains("on"));
+        if (allOn) {
+          later(() => {
+            cheerFanfare();
+            burst(innerWidth / 2, innerHeight * 0.35, 45, "🎉");
+            say("Great counting!");
+          }, 350);
+        }
+      } else {
+        restart(el, "jiggle");
+        tone(NOTES[j], 0.4, 0.2);
+        say(NUMBER_WORDS[j + 1]);
+      }
+    };
+  });
+}
+
+/* Floating Bubbles Minigame */
+let bubbleTimer = null;
+function startBubbles() {
+  if (bubbleTimer) clearInterval(bubbleTimer);
+  bubbleTimer = setInterval(() => {
+    if (!playing || document.hidden) return;
+    if (document.querySelectorAll(".soap-bubble").length >= 3) return;
+    spawnBubble();
+  }, 4500);
+}
+const BUBBLE_EMOJIS = ["⭐","🫧","🎵","✨","💖","🎈","🌈"];
+function spawnBubble() {
+  const container = $("bubbles");
+  if (!container) return;
+  const b = document.createElement("div");
+  b.className = "soap-bubble";
+  const size = Math.floor(48 + Math.random() * 30);
+  const left = Math.floor(6 + Math.random() * 88);
+  const dur = (7 + Math.random() * 5).toFixed(1);
+  const drift = (Math.random() * 36 - 18).toFixed(0);
+  b.style.width = size + "px"; b.style.height = size + "px";
+  b.style.left = left + "%";
+  b.style.setProperty("--dur", dur + "s");
+  b.style.setProperty("--drift", drift + "px");
+  b.textContent = BUBBLE_EMOJIS[Math.floor(Math.random() * BUBBLE_EMOJIS.length)];
+
+  b.addEventListener("pointerdown", e => {
+    e.stopPropagation();
+    popBubble(b, e.clientX, e.clientY);
+  });
+  b.addEventListener("animationend", () => b.remove());
+  container.appendChild(b);
+}
+function popBubble(b, x, y) {
+  if (b.classList.contains("bubble-pop")) return;
+  b.classList.add("bubble-pop");
+  popSound();
+  burst(x, y, 16, "🫧");
+  if (Math.random() < 0.3) boing();
+  setTimeout(() => b.remove(), 220);
+}
+
 function restart(el, cls) { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
 function render(c) {
   document.documentElement.style.setProperty("--hue", c.hue);
@@ -1061,9 +1451,12 @@ function render(c) {
   $("word").innerHTML = c.word;
   $("when").hidden = !c.when; $("when").textContent = c.when || "";
   $("detail").hidden = !c.detail; $("detail").textContent = c.detail || "";
+  $("tip").hidden = !(showTips && c.tip); $("tip").textContent = c.tip ? "👪 " + c.tip : "";
+  $("didit").hidden = true;
   ["glyph", "visual", "word"].forEach(id => restart($(id), "pop"));
   c.mount?.();
   loadClips();
+  setupInteractivity();
 }
 // Clips are fetched first and handed to the player as a blob, which works where
 // direct video links are blocked. Each clip is fetched once and kept.
@@ -1084,14 +1477,22 @@ function play(c, { fresh = true } = {}) {
   const speech = steps(c.speech);
   if (fresh) {
     cardsShown++;
-    if (cardsShown % 6 === 0) { giveSticker(); speech.push({ text: "You got a sticker!" }); if (childName) speech.push({ text: cheer() }); }
-    burst(innerWidth / 2, innerHeight * 0.42, 45);
   }
   stopCall();
   $("visual").querySelectorAll(".count").forEach(x => x.classList.remove("on"));
-  if (c.song && singing) { hush(); sing(c.song, fresh && cardsShown % 6 === 0); return; }
+  if (c.song && (singing || c.alwaysSing)) { hush(); sing(c.song, false); return; }
   say(speech, c.afterSpeech);
   c.after?.(c);
+}
+
+/* Toy orchestra harmonic accompaniment */
+function playBacking(m, inst, durMs) {
+  if (m === null) return;
+  const bassMidi = m > 60 ? m - 12 : m;
+  note(bassMidi, "marimba", durMs / 1000 * 0.75, 0.2);
+  if (Math.random() < 0.45) {
+    note(bassMidi + 7, "musicbox", durMs / 1000 * 0.5, 0.12);
+  }
 }
 
 /* Sing a song: melody on the instrument, each line said on its first beat,
@@ -1114,15 +1515,21 @@ function sing(song, withCheer) {
       later(() => {
         if (m !== null) {
           note(m, T.inst, beats * T.beat / 1000 * 0.9, 0.55);
+          playBacking(m, T.inst, beats * T.beat);
           const bar = BAR_MIDI.indexOf(m); if (bar >= 0) flashBar(bar);
           restart($("word"), "beat");
+          if (document.body.classList.contains("music")) restart($("visual"), "beat");
         } else if (song.fx) songFx(song.fx, T.beat, song);
       }, at);
       t += beats * T.beat;
     }
     t += 200;
   });
-  later(() => { if (withCheer) { giveSticker(); say(["You got a sticker!", ...(childName ? [cheer()] : [])]); } }, t + 300);
+  later(() => {
+    cheerFanfare();
+    burst(innerWidth / 2, innerHeight * 0.35, 35, "⭐");
+    if (withCheer) { giveSticker(); say(["You got a sticker!", ...cheer()]); }
+  }, t + 250);
 }
 let lastFx = 0;
 function songFx(fx, beat, song) {
@@ -1140,10 +1547,25 @@ function lightWord(j) { $("detail").querySelectorAll(".lw")[j]?.classList.add("l
 function show(t, i) {
   topic = t; index = (i + TOPICS[t].size) % TOPICS[t].size; lastIndex[t] = index;
   current = TOPICS[t].card(index);
+  const sk = seenKey(TOPICS[t].id, index); if (sk) (seen[TOPICS[t].id] ||= new Set()).add(sk);
+  current.tip ??= tipFor(TOPICS[t].id, index);
   document.body.classList.toggle("music", TOPICS[t].id === "music");
   document.body.classList.toggle("piano-mode", TOPICS[t].id === "piano");
   [...$("topics").children].forEach((b, k) => b.classList.toggle("on", k === t));
   $("topics").children[t].scrollIntoView({ inline: "nearest", block: "nearest" });
+  // Sparkling 3-note music box arpeggio on card change
+  const CHIMES = [
+    [60, 64, 67], // C major
+    [62, 65, 69], // D minor
+    [64, 67, 72], // E minor / C
+    [65, 69, 72], // F major
+    [67, 72, 76], // G major
+    [69, 72, 76], // A minor
+  ];
+  const chord = CHIMES[index % CHIMES.length];
+  chord.forEach((m, step) => {
+    later(() => note(m, "celeste", 0.75, 0.12 - step * 0.02), step * 85);
+  });
   render(current); play(current);
 }
 function repeat() { if (current) { render(current); play(current, { fresh: false }); } }
@@ -1215,15 +1637,17 @@ function animalCall(name, sound, maxSec = 5) {
 
 /* Instruments, all made in the browser: [partial ratio, level, wave], attack, decay, volume */
 const VOICES = {
-  piano:     { parts: [[1, 1, "triangle"], [2, .35, "sine"], [3, .12, "sine"]], a: .004, d: 1.8, v: .24 },
-  musicbox:  { parts: [[2, 1, "sine"], [4, .25, "sine"], [6.3, .08, "sine"]], a: .002, d: 1.1, v: .15 },
-  marimba:   { parts: [[1, 1, "sine"], [4, .18, "sine"], [10, .04, "sine"]], a: .003, d: .6, v: .32 },
-  xylophone: { parts: [[1, 1, "sine"], [4, .15, "sine"]], a: .005, d: 1.0, v: .2 },
-  flute:     { parts: [[1, 1, "sine"], [2, .12, "sine"]], a: .08, v: .16, held: true },
+  piano:     { parts: [[1, 1, "triangle"], [2, .25, "sine"], [3, .08, "sine"]], a: .008, d: 2.0, v: .22 },
+  musicbox:  { parts: [[2, 1, "sine"], [4, .2, "sine"], [6, .05, "sine"]], a: .005, d: 1.4, v: .14 },
+  marimba:   { parts: [[1, 1, "sine"], [4, .12, "sine"], [8, .02, "sine"]], a: .006, d: .7, v: .26 },
+  xylophone: { parts: [[1, 1, "sine"], [3, .1, "sine"]], a: .006, d: 1.1, v: .18 },
+  flute:     { parts: [[1, 1, "sine"], [2, .1, "sine"]], a: .09, v: .15, held: true },
+  kalimba:   { parts: [[1, 1, "sine"], [3, .22, "sine"], [7, .04, "sine"]], a: .005, d: 1.3, v: .2 },
+  celeste:   { parts: [[2, 1, "sine"], [4, .28, "sine"], [8, .06, "sine"]], a: .004, d: 1.6, v: .16 },
 };
 function note(midi, inst = "piano", dur = 0.5, vol = 1) {
-  const a = audio(), t = a.currentTime, f = 440 * 2 ** ((midi - 69) / 12), V = VOICES[inst];
-  const out = a.createGain(); out.connect(a.destination);
+  const a = audio(), t = a.currentTime, f = 440 * 2 ** ((midi - 69) / 12), V = VOICES[inst] || VOICES.piano;
+  const out = a.createGain(); out.connect(getMaster());
   const end = V.held ? t + dur + 0.2 : t + V.d;
   let lfo;
   if (V.held) { lfo = a.createOscillator(); lfo.frequency.value = 5; var depth = a.createGain(); depth.gain.value = f * 0.006; lfo.connect(depth); lfo.start(t); lfo.stop(end); }
@@ -1238,11 +1662,75 @@ function note(midi, inst = "piano", dur = 0.5, vol = 1) {
   if (V.held) { out.gain.setValueAtTime(V.v * vol, t + dur); out.gain.linearRampToValueAtTime(0.0001, end); }
   else out.gain.exponentialRampToValueAtTime(0.0001, end);
 }
+
+/* Soothing Lullaby Music Box Engine */
+let lullabyPlaying = true;
+try { lullabyPlaying = localStorage.getItem("lullaby") !== "off"; } catch {}
+let lullabyTimer = null;
+const LULLABY_NOTES = [
+  [60, 2], [64, 2], [67, 3], [60, 2], [64, 2], [67, 3],
+  [60, 1], [64, 1], [67, 2], [72, 2], [71, 2], [69, 2], [67, 4],
+  [65, 1], [69, 1], [72, 2], [71, 1], [69, 1], [67, 3],
+  [65, 1], [64, 1], [62, 2], [60, 4]
+];
+let lullabyIdx = 0;
+
+function tickLullaby() {
+  if (!lullabyPlaying || !playing) return;
+  const [m, beats] = LULLABY_NOTES[lullabyIdx % LULLABY_NOTES.length];
+  lullabyIdx++;
+  const durSec = beats * 0.6;
+  const vol = speechActive ? 0.02 : 0.055;
+  note(m, "celeste", durSec * 0.95, vol);
+  if (beats >= 2) {
+    note(m > 60 ? m - 12 : m, "kalimba", durSec * 0.75, vol * 0.65);
+  }
+  lullabyTimer = setTimeout(tickLullaby, durSec * 1000);
+}
+
+function startLullaby() {
+  if (lullabyTimer) clearTimeout(lullabyTimer);
+  lullabyIdx = 0;
+  if (lullabyPlaying) tickLullaby();
+  updateLullabyBtn();
+}
+
+function toggleLullaby() {
+  lullabyPlaying = !lullabyPlaying;
+  try { localStorage.setItem("lullaby", lullabyPlaying ? "on" : "off"); } catch {}
+  if (lullabyTimer) clearTimeout(lullabyTimer);
+  if (lullabyPlaying) tickLullaby();
+  updateLullabyBtn();
+  if (lullabyPlaying) sparkleSound();
+}
+
+function updateLullabyBtn() {
+  const b = $("lullabyBtn");
+  if (!b) return;
+  b.classList.toggle("on", lullabyPlaying);
+  b.querySelector("b").textContent = lullabyPlaying ? "Lullaby: On" : "Lullaby: Off";
+}
+function updateSingBtn() {
+  const b = $("singBtn");
+  if (!b) return;
+  b.classList.toggle("on", singing);
+  b.querySelector("b").textContent = singing ? "Sing: On" : "Sing: Off";
+  const chk = $("sing");
+  if (chk) chk.checked = singing;
+}
+function toggleSing() {
+  singing = !singing;
+  try { localStorage.setItem("sing", singing ? "on" : "off"); } catch {}
+  updateSingBtn();
+  if (singing) sparkleSound();
+  repeat();
+}
 function playSong(i) {
   const [, , , inst, beat, notes] = SONGS[i];
   let at = 300;
   for (const [m, beats] of parseNotes(notes)) {
     later(() => {
+      if (m === null) return;                         // a rest
       note(m, inst, beats * beat / 1000 * 0.9);
       const bar = BAR_MIDI.indexOf(m);
       if (bar >= 0) flashBar(bar);
@@ -1308,19 +1796,27 @@ function pianoPress(m) {
   // Finished the song: celebrate, play it back, then start again
   const done = follow; follow = null; glowNext();
   burst(innerWidth / 2, innerHeight * 0.3, 90, "⭐");
-  say([`You played ${done.name}!`, childName ? `Well done, ${childName}.` : "Well done."], () => {
+  say([`You played ${done.name}!`, ...withName(`Well done, ${childName}.`, "Well done!")], () => {
     done.notes.forEach((n, k) => later(() => pianoPress(n), 300 + k * 420));
     later(() => { follow = { ...done, idx: 0 }; glowNext(); }, 600 + done.notes.length * 420);
   });
 }
 
 let cheerTimer;
+// Says the line with the typed name. If that exact line was recorded, the natural
+// voice says it all; otherwise the name is said first, then the recorded name-free line.
+function withName(full, generic) {
+  if (!childName) return [generic];
+  if (recordingFor(full)) return [full];
+  return [`${childName}!`, generic];
+}
 function cheer() {
-  const text = CHEERS[Math.floor(Math.random() * CHEERS.length)].replaceAll("{n}", childName);
+  const pick = CHEERS[Math.floor(Math.random() * CHEERS.length)];
+  const text = pick.replaceAll("{n}", childName || "").replace(/, \./, "!");
   const el = $("cheer"); el.textContent = text + " 🎉"; restart(el, "show");
   clearTimeout(cheerTimer); cheerTimer = setTimeout(() => el.classList.remove("show"), 2600);
   burst(innerWidth / 2, innerHeight * 0.15, 80, "🎉");
-  return text;
+  return withName(text, pick.replace(", {n}.", "!"));      // e.g. ["Aarav!", "Well done!"]
 }
 
 /* ================= Sticker jar: a sticker every few activities ================= */
@@ -1345,13 +1841,53 @@ function giveSticker() {
   setTimeout(() => { f.remove(); showJar(); restart($("jar"), "got"); }, 1900);
   return st;
 }
-$("jar").addEventListener("pointerdown", e => e.stopPropagation());
-$("jar").addEventListener("click", () => {
-  $("stickerGrid").innerHTML = myStickers.length ? myStickers.map(x => `<span>${x}</span>`).join("") : "<p>Play to earn stickers!</p>";
-  $("stickerTitle").textContent = childName ? `${childName}'s stickers` : "My stickers";
+function openStickers() {
+  $("stickerTitle").textContent = childName ? `${childName}'s Stickers` : "My Stickers";
+  const grid = $("stickerGrid");
+  if (!myStickers.length) {
+    grid.innerHTML = "<p style='grid-column: 1/-1; padding: 20px 0;'>Play activities to collect shiny stickers!</p>";
+  } else {
+    grid.innerHTML = myStickers.map((st, i) =>
+      `<span class="sticker-item" data-idx="${i}" aria-label="sticker ${st}">${st}</span>`
+    ).join("");
+    grid.querySelectorAll(".sticker-item").forEach(item => {
+      item.addEventListener("pointerdown", e => {
+        e.stopPropagation();
+        restart(item, "jiggle");
+        boing();
+        const r = item.getBoundingClientRect();
+        burst(r.left + r.width / 2, r.top + r.height / 2, 12, item.textContent);
+      });
+    });
+  }
   $("stickers").hidden = false;
+  say("Here are your stickers!");
+}
+
+$("jar").addEventListener("pointerdown", e => e.stopPropagation());
+$("jar").addEventListener("click", openStickers);
+$("closeStickers")?.addEventListener("pointerdown", e => e.stopPropagation());
+$("closeStickers")?.addEventListener("click", () => { $("stickers").hidden = true; });
+$("partyStickers")?.addEventListener("pointerdown", e => e.stopPropagation());
+$("partyStickers")?.addEventListener("click", () => {
+  sparkleSound();
+  burst(innerWidth / 2, innerHeight / 2, 60, "🎉");
+  if (myStickers.length) {
+    for (let k = 0; k < 6; k++) {
+      later(() => {
+        const randSt = myStickers[Math.floor(Math.random() * myStickers.length)];
+        burst(innerWidth * (0.15 + Math.random() * 0.7), innerHeight * (0.2 + Math.random() * 0.6), 25, randSt);
+        boing();
+      }, k * 180);
+    }
+  }
 });
-$("stickers").addEventListener("pointerdown", e => { e.stopPropagation(); $("stickers").hidden = true; });
+$("singBtn")?.addEventListener("pointerdown", e => e.stopPropagation());
+$("singBtn")?.addEventListener("click", toggleSing);
+updateSingBtn();
+$("lullabyBtn")?.addEventListener("pointerdown", e => e.stopPropagation());
+$("lullabyBtn")?.addEventListener("click", toggleLullaby);
+updateLullabyBtn();
 showJar();
 
 /* ================= Topic pills & xylophone ================= */
@@ -1403,19 +1939,316 @@ addEventListener("keydown", e => {
   show(T("animals"), (lastIndex[T("animals")] ?? -1) + 1);
 }, true);
 
+/* ================= Learning games (research-based) =================
+   "Where is the ___?": the child must tap the right picture, not just anywhere.
+   Wrong taps get a gentle "That's the banana! Where's the apple?", a second miss
+   makes the answer wiggle, and every try ends in success. The game waits ~5 s
+   before asking again, hints at ~10 s and shows the answer at ~15 s. */
+let age = "2", sessionMin = 10, showTips = true;
+try {
+  age = localStorage.getItem("age") || "2";
+  sessionMin = +(localStorage.getItem("sessionMin") ?? 10);
+  showTips = localStorage.getItem("tips") !== "off";
+} catch {}
+const choiceCount = () => ({ "1": 2, "2": 3, "3": 4 })[age] || 2;
+const pairCount = () => (age === "3" ? 3 : 2);
+const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const today = () => new Date().toISOString().slice(0, 10);
+
+// What each word was: found right or missed, and when (for "practice later")
+let stats = {};
+try { stats = JSON.parse(localStorage.getItem("stats") || "{}"); } catch {}
+function record(key, ok) {
+  const s = (stats[key] ||= { c: 0, m: 0, last: "" });
+  ok ? s.c++ : s.m++;
+  s.last = today();
+  try { localStorage.setItem("stats", JSON.stringify(stats)); } catch {}
+}
+// Words to practise: missed more than found, seen on an earlier day, or missed today
+const isDue = k => { const s = stats[k]; return s && s.m > 0 && s.m >= s.c; };
+
+const TOOLS = [
+  ["toothbrush", "🪥", "What do we use to brush our teeth?", "Brush teeth"],
+  ["spoon", "🥄", "What do we use to eat?", "Eat"],
+  ["cup", "🥛", "What do we drink from?", "Drink"],
+  ["bed", "🛏️", "Where do we sleep?", "Sleep"],
+  ["bathtub", "🛁", "Where do we take a bath?", "Take a bath"],
+  ["soap", "🧼", "What do we use to wash our hands?", "Wash hands"],
+  ["shoes", "👟", "What do we put on our feet?", "Put on shoes"],
+  ["book", "📖", "What do we read?", "Read a book"],
+  ["teddy bear", "🧸", "What do we play with?", "Play"],
+  ["chair", "🪑", "What do we sit on?", "Sit down"],
+  ["potty", "🚽", "Where do we go potty?", "Use the potty"],
+  ["shirt", "👕", "What do we wear?", "Get dressed"],
+];
+const shapeSvg = (svg, fill) => `<svg class="qshape" viewBox="0 0 100 100" fill="${fill}" stroke="#fff" stroke-width="5" stroke-linejoin="round">${svg}</svg>`;
+// Each pool item: key, picture, the question, what to say when found, and "That's the …"
+const POOLS = {
+  letters: () => LETTER_KEYS.map(L => ({ key: `abc:${L}`, html: `<span class="qtxt">${L}</span>`,
+    q: `Where is «${L}»?`, yes: `Yes! That's «${L}»!`, that: `That's «${L}».` })),
+  numbers: () => NUMBER_WORDS.slice(1).map((w, i) => ({ key: `num:${i + 1}`, html: `<span class="qtxt">${i + 1}</span>`,
+    q: `Where is ${w}?`, yes: `Yes! That's ${w}!`, that: `That's ${w}.` })),
+  colors: () => COLORS.map(([n, hex]) => ({ key: `color:${n}`, html: `<span class="qblob" style="background:${hex}"></span>`,
+    q: `Where is ${n.toLowerCase()}?`, yes: `Yes! That's ${n.toLowerCase()}!`, that: `That's ${n.toLowerCase()}.` })),
+  shapes: () => SHAPES.map(([n, , svg], i) => ({ key: `shape:${n}`, html: shapeSvg(svg, BAR_COLORS[(i * 3) % 10]),
+    q: `Where is the ${n.toLowerCase()}?`, yes: `Yes! That's the ${n.toLowerCase()}!`, that: `That's the ${n.toLowerCase()}.` })),
+  animals: () => ANIMALS.map(([n, e]) => ({ key: `animal:${n}`, html: `<span class="qemoji">${e}</span>`, call: n,
+    q: `Where is the ${n}?`, yes: `Yes! That's the ${n}!`, that: `That's the ${n}.` })),
+  fruits: () => FRUITS.map(([n, e]) => ({ key: `fruit:${n}`, html: `<span class="qemoji">${e}</span>`,
+    q: `Where is the ${n.toLowerCase()}?`, yes: `Yes! That's the ${n.toLowerCase()}!`, that: `That's the ${n.toLowerCase()}.` })),
+  tools: () => TOOLS.map(([n, e, q]) => ({ key: `tool:${n}`, html: `<span class="qemoji">${e}</span>`,
+    q, yes: `Yes! The ${n}!`, that: `That's the ${n}.` })),
+};
+const QUIZ_POOL = { abc: "letters", "123": "numbers", colors: "colors", shapes: "shapes", animals: "animals", fruits: "fruits", day: "tools" };
+// The pool item a learning card shows (so quizzes ask about things just seen)
+function seenKey(id, i) {
+  if (id === "abc") return `abc:${LETTER_KEYS[i]}`;
+  if (id === "123") return `num:${i + 1}`;
+  if (id === "colors") return `color:${COLORS[i][0]}`;
+  if (id === "shapes") return `shape:${SHAPES[i][0]}`;
+  if (id === "animals") return `animal:${ANIMALS[i][0]}`;
+  if (id === "fruits") return `fruit:${FRUITS[i][0]}`;
+  if (id === "day") { const t = TOOLS.find(x => x[3] === ACTIONS[i][0]); return t ? `tool:${t[0]}` : null; }
+  return null;
+}
+const seen = {}, sinceQuiz = {};
+let finds = 0;   // right answers this session (shown on the "all done" screen)
+
+function pickTarget(items, prefer = []) {
+  const due = items.filter(x => isDue(x.key));
+  const fresh = items.filter(x => prefer.includes(x.key));
+  const from = due.length && Math.random() < 0.5 ? due : fresh.length ? fresh : items;
+  return from[Math.floor(Math.random() * from.length)];
+}
+const PRAISE = ["You looked carefully!", "You found it!", "Great finding!", "Good listening!", "You did it!"];
+function praise() {
+  if (childName && Math.random() < 0.35) return withName(`Great finding, ${childName}.`, "Great finding!");
+  return [PRAISE[Math.floor(Math.random() * PRAISE.length)]];
+}
+const choicesHTML = list => `<div class="choices n${list.length}">${list.map((c, k) => `<button class="choice" data-k="${k}" aria-label="choice ${k + 1}">${c.html}</button>`).join("")}</div>`;
+const nextBtn = `<button class="next" hidden>Next ⭐</button>`;
+
+// A "Where is the ___?" card. mode: "find" (default) | "sound" (who says this?)
+function makeQuiz(pid, prefer, mode = "find") {
+  const items = POOLS[pid]();
+  const target = pickTarget(items, prefer);
+  const choices = shuffle([target, ...shuffle(items.filter(x => x !== target)).slice(0, choiceCount() - 1)]);
+  const q = mode === "sound"
+    ? { ...target, q: "Who says this?", yes: `Yes! The ${target.call} says ${ANIMAL_WORDS[target.call]}!`, sound: target.call }
+    : target;
+  return { quiz: true, hue: 40 + Math.floor(Math.random() * 280), big: "", small: "",
+    when: mode === "sound" ? "👂 Who says this?" : "🔍 Find it", word: `<b>${q.q.replace(/«(.)»/g, "$1")}</b>`, detail: "",
+    tip: "Let them try first. Count to five before you help.",
+    visual: choicesHTML(choices) + nextBtn, speech: [], afterSpeech: () => runChoice(q, choices, target) };
+}
+
+// Shared runner for every tap-the-right-one game
+function runChoice(q, choices, target, opts = {}) {
+  const box = $("visual").querySelector(".choices"); if (!box) return;
+  const btns = [...box.querySelectorAll(".choice")];
+  const targetBtn = btns[choices.indexOf(target)];
+  let misses = 0, done = false, waits = [];
+  const wait = (fn, ms) => { const id = setTimeout(fn, ms); waits.push(id); timers.push(id); };
+  const quiet = () => { waits.forEach(clearTimeout); waits = []; };
+  const hint = () => { if (!done) restart(targetBtn, "hintme"); };
+  const ask = () => {
+    if (q.sound) { animalCall(q.sound, ANIMAL_WORDS[q.sound], 2.2); wait(() => say(q.q), 2300); }
+    else say(q.q);
+  };
+  const patience = () => {                     // ~5 s ask again, ~10 s hint, ~15 s show the answer
+    quiet();
+    wait(() => { if (!done) ask(); }, 5000);
+    wait(hint, 10000);
+    wait(() => { if (!done) { hint(); say(["Look, here it is!", target.that ?? q.that]); } }, 15000);
+  };
+  btns.forEach((b, k) => b.addEventListener("pointerdown", e => {
+    e.stopPropagation(); e.preventDefault();
+    if (done) return;
+    const item = choices[k];
+    if (item === target) {
+      done = true; quiet();
+      if (misses === 0) finds++;
+      record(target.key, misses === 0);
+      b.classList.add("right"); btns.forEach(x => x !== b && x.classList.add("fade"));
+      note(84, "xylophone", 0.4); later(() => note(88, "xylophone", 0.5), 120);
+      const r = b.getBoundingClientRect(); burst(r.left + r.width / 2, r.top + r.height / 2, 30, "⭐");
+      if (Math.random() < 0.12) giveSticker();          // a small surprise now and then, not a fixed prize
+      say([opts.yes ?? q.yes, ...praise()], () => { const n = $("visual").querySelector(".next"); if (n) n.hidden = false; });
+    } else {
+      misses++;
+      if (misses === 1) record(target.key, false);
+      restart(b, "nope");
+      say([item.that, q.q]);
+      if (misses >= 2) hint();
+      patience();
+    }
+  }));
+  $("visual").querySelector(".next")?.addEventListener("pointerdown", e => { e.stopPropagation(); goNext(1); });
+  ask(); patience();
+}
+
+/* ---------- Thinking games ---------- */
+const COLOR_HEX = Object.fromEntries(COLORS.map(([n, h]) => [n, h]));
+const FRUIT_COLOR = { Apple: "Red", Banana: "Yellow", Orange: "Orange", Grapes: "Purple", Strawberry: "Red", Watermelon: "Green",
+  Mango: "Yellow", Pear: "Green", Cherries: "Red", Pineapple: "Yellow", Peach: "Orange", Kiwi: "Green", Blueberries: "Blue" };
+// Sort: put the fruit in the basket of its color (categorization)
+function makeSort() {
+  const [name, emoji] = FRUITS[Math.floor(Math.random() * FRUITS.length)];
+  const col = FRUIT_COLOR[name];
+  const others = shuffle(Object.keys(COLOR_HEX).filter(c => c !== col && c !== "White" && c !== "Black")).slice(0, Math.max(1, choiceCount() - 2));
+  const basket = c => ({ key: `sort:${name}`, html: `<span class="basket" style="--b:${COLOR_HEX[c]}">🧺</span>`, that: `That's the ${c.toLowerCase()} basket.` });
+  const target = basket(col), choices = shuffle([target, ...others.map(basket)]);
+  const q = { q: `Put the ${name.toLowerCase()} in its color basket!`, yes: `Yes! The ${name.toLowerCase()} is ${col.toLowerCase()}!` };
+  return { quiz: true, hue: 30, big: "", small: "", when: "🧺 Sort by color", word: `<b>Which basket?</b>`, detail: "",
+    tip: "Ask: what color is it? Then sort real toys or socks by color together.",
+    visual: `<div class="qitem">${emoji}</div>` + choicesHTML(choices) + nextBtn, speech: [], afterSpeech: () => runChoice(q, choices, target) };
+}
+// What comes next in my day? (sequencing)
+const DAY_ORDER = [["Wake up", "🌅"], ["Brush teeth", "🪥"], ["Get dressed", "👕"], ["Put on shoes", "👟"], ["Walk", "🚶"],
+  ["Play", "🧸"], ["Tidy up", "🧺"], ["Wash hands", "🧼"], ["Eat", "🥣"], ["Take a bath", "🛁"], ["Sleep", "😴"]];
+function makeNext() {
+  const k = Math.floor(Math.random() * (DAY_ORDER.length - 1));
+  const [first, fe] = DAY_ORDER[k], [nextName, ne] = DAY_ORDER[k + 1];
+  const opt = ([n, e]) => ({ key: `next:${first}`, html: `<span class="qemoji">${e}</span>`, that: `That one is ${n.toLowerCase()}.` });
+  const target = opt(DAY_ORDER[k + 1]);
+  const others = shuffle(DAY_ORDER.filter((_, j) => j !== k && j !== k + 1)).slice(0, choiceCount() - 1).map(opt);
+  const choices = shuffle([target, ...others]);
+  const q = { q: `First we ${first.toLowerCase()}. What comes next?`, yes: `Yes! Then we ${nextName.toLowerCase()}!` };
+  return { quiz: true, hue: 200, big: "", small: "", when: "➡️ What comes next?", word: `<b>${first} → ?</b>`, detail: "",
+    tip: "Talk about your own day: what did we do after breakfast?",
+    visual: `<div class="qitem">${fe} <span class="arrow">➜</span> ❓</div>` + choicesHTML(choices) + nextBtn, speech: [],
+    afterSpeech: () => runChoice(q, choices, target) };
+}
+// Memory: flip two cards to find a pair (working memory)
+function makeMemory() {
+  const picks = shuffle(FRUITS).slice(0, pairCount());
+  const cards = shuffle([...picks, ...picks]);
+  return { quiz: true, hue: 150, big: "", small: "", when: "🧠 Memory", word: "<b>Find the pairs!</b>", detail: "",
+    tip: "Name each picture together as it flips over.",
+    visual: `<div class="memory n${cards.length}">${cards.map((c, k) => `<button class="mcard" data-k="${k}"><span>${c[1]}</span></button>`).join("")}</div>` + nextBtn,
+    speech: [], afterSpeech: () => runMemory(cards) };
+}
+function runMemory(cards) {
+  const btns = [...$("visual").querySelectorAll(".mcard")];
+  let open = [], matched = 0, busy = true;
+  // Look first: all cards face up, then they turn over and the child finds the pairs
+  btns.forEach(b => b.classList.add("up"));
+  say("Look carefully!");
+  later(() => { btns.forEach(b => b.classList.remove("up")); busy = false; say("Now find the pairs!"); }, age === "3" ? 3500 : 4500);
+  btns.forEach((b, k) => b.addEventListener("pointerdown", e => {
+    e.stopPropagation(); e.preventDefault();
+    if (busy || b.classList.contains("up")) return;
+    b.classList.add("up"); open.push(k);
+    say(`${cards[k][0]}.`);
+    if (open.length < 2) return;
+    const [a, c] = open; open = [];
+    if (cards[a][0] === cards[c][0]) {
+      matched += 2; finds++;
+      [btns[a], btns[c]].forEach(x => x.classList.add("matched"));
+      note(84, "xylophone", 0.4);
+      if (matched === cards.length) {
+        burst(innerWidth / 2, innerHeight * 0.4, 50, "⭐");
+        later(() => say(["You found them all!", ...praise()], () => { const n = $("visual").querySelector(".next"); if (n) n.hidden = false; }), 700);
+      }
+    } else {
+      busy = true;
+      later(() => { btns[a].classList.remove("up"); btns[c].classList.remove("up"); busy = false; }, 1200);
+    }
+  }));
+  $("visual").querySelector(".next")?.addEventListener("pointerdown", e => { e.stopPropagation(); goNext(1); });
+}
+const GAME_KINDS = [() => makeQuiz("animals", [], "sound"), makeSort, makeNext, makeMemory];
+// Find it: mixed review, words missed before come back first
+function makeReview() {
+  const due = Object.keys(stats).filter(isDue);
+  const byPool = { abc: "letters", num: "numbers", color: "colors", shape: "shapes", animal: "animals", fruit: "fruits", tool: "tools" };
+  const pools = due.length && Math.random() < 0.6 ? [...new Set(due.map(k => byPool[k.split(":")[0]]).filter(Boolean))] : Object.keys(POOLS);
+  return makeQuiz(pools[Math.floor(Math.random() * pools.length)], due);
+}
+
+/* ---------- Moving between cards: a quick "Find it" after every 3 new cards ---------- */
+function showCard(c) { current = c; render(c); play(c); }
+function goNext(dir) {
+  const id = TOPICS[topic].id;
+  if (current?.quiz && !["find", "games"].includes(id)) { show(topic, dir > 0 ? index + 1 : index); return; }
+  if (dir > 0 && QUIZ_POOL[id] && (sinceQuiz[id] = (sinceQuiz[id] || 0) + 1) >= 3 && (seen[id]?.size || 0) >= 2) {
+    sinceQuiz[id] = 0;
+    showCard(makeQuiz(QUIZ_POOL[id], [...seen[id]]));
+    return;
+  }
+  show(topic, index + dir);
+}
+
+/* ---------- Grown-up tips: one small line on each card ---------- */
+function tipFor(id, i) {
+  switch (id) {
+    case "abc": return `Say "${LETTER_KEYS[i]}" together. Find something at home that starts with ${LETTER_KEYS[i]}.`;
+    case "123": return `Count ${i + 1} things together: fingers, toes or toys.`;
+    case "colors": return `Point to something ${COLORS[i][0].toLowerCase()} in the room.`;
+    case "shapes": return `Look for a ${SHAPES[i][0].toLowerCase()} at home and trace it in the air.`;
+    case "animals": return `Ask: "What does the ${ANIMALS[i][0]} say?" Make the sound together.`;
+    case "day": return `Do it together: ${ACTIONS[i][6]}`;
+    case "fruits": return `Ask: "What color is the ${FRUITS[i][0].toLowerCase()}?" Do we have one at home?`;
+    case "moves": return `Move your hands ${MOVES[i][1].toLowerCase()} together.`;
+    case "music": return "Clap or dance along together.";
+    case "piano": return "Take turns: you press one key, then they press one.";
+    case "sing": return "Sing along: your voice is their favorite sound.";
+  }
+  return "";
+}
+
+/* ---------- "We did it!" after a My Day "your turn" ---------- */
+function showDidIt() { const b = $("didit"); if (b) b.hidden = false; }
+
+/* ---------- Healthy sessions: ~10 minutes, then a break that a grown-up can extend ---------- */
+let sessionSec = 0;
+const todayKey = () => `minutes:${today()}`;
+function todayMinutes() { try { return Math.floor(+(localStorage.getItem(todayKey()) || 0) / 60); } catch { return 0; } }
+setInterval(() => {
+  if (!playing || document.hidden || !$("break").hidden) return;
+  sessionSec++;
+  try { localStorage.setItem(todayKey(), +(localStorage.getItem(todayKey()) || 0) + 1); } catch {}
+  if (sessionMin > 0 && sessionSec >= sessionMin * 60) showBreak();
+}, 1000);
+const GO_DO = ["Let's go find something red!", "Can you find a circle at home?", "Let's read a real book together!",
+  "Let's go give someone a big hug!", "Let's go play with your toys!", "Let's go have a drink of water!"];
+function showBreak() {
+  clearTimers(); hush(); stopCall();
+  playing = false;
+  const st = giveSticker();
+  const go = GO_DO[Math.floor(Math.random() * GO_DO.length)];
+  $("breakFinds").textContent = finds ? `You found ${finds} things today!` : "You learned so much today!";
+  $("breakGo").textContent = go;
+  $("breakSticker").textContent = st;
+  $("breakToday").textContent = `Today: ${todayMinutes()} min (guideline for ages 2–5: up to 60 min a day, with a grown-up)`;
+  $("break").hidden = false;
+  later(() => say(["All done for now!", finds ? `You found ${finds} things!` : "You learned so much!", go]), 600);
+}
+// A grown-up holds the button for 1.5 s to keep playing (too long for toddler taps)
+(() => {
+  let hold = null;
+  const btn = $("keepPlaying");
+  btn.addEventListener("pointerdown", e => {
+    e.stopPropagation(); btn.classList.add("holding");
+    hold = setTimeout(() => { $("break").hidden = true; sessionSec = 0; playing = true; btn.classList.remove("holding"); show(topic, index); }, 1500);
+  });
+  ["pointerup", "pointerleave", "pointercancel"].forEach(t => btn.addEventListener(t, () => { clearTimeout(hold); btn.classList.remove("holding"); }));
+  $("break").addEventListener("pointerdown", e => e.stopPropagation());
+})();
+
 /* ================= Touch: tap = repeat, swipe up = next, sideways = topic ================= */
 let start = null;
 addEventListener("pointerdown", e => {
-  if (!playing || e.target.closest("#topics, #xylo, #setup, .piano, #jar, #stickers")) return;
+  if (!playing || e.target.closest("#topics, #xylo, #setup, .piano, #jar, #stickers, .choices, .next, .memory, #didit, #break")) return;
   start = { x: e.clientX, y: e.clientY, t: Date.now() };
 });
 addEventListener("pointerup", e => {
   if (!start) return;
   const dx = e.clientX - start.x, dy = e.clientY - start.y; start = null;
   const far = 50;
-  if (Math.abs(dy) > far && Math.abs(dy) >= Math.abs(dx)) show(topic, index + (dy < 0 ? 1 : -1));
+  if (Math.abs(dy) > far && Math.abs(dy) >= Math.abs(dx)) goNext(dy < 0 ? 1 : -1);
   else if (Math.abs(dx) > far) { const t = (topic + (dx < 0 ? 1 : -1) + TOPICS.length) % TOPICS.length; show(t, lastIndex[t] ?? 0); }
-  else { burst(e.clientX, e.clientY, 18); repeat(); }
+  else repeat();
 });
 addEventListener("pointercancel", () => { start = null; });
 addEventListener("contextmenu", e => e.preventDefault());
@@ -1426,6 +2259,12 @@ addEventListener("gesturestart", e => e.preventDefault());   // iOS pinch-zoom
 try { $("name").value = localStorage.getItem("childName") || ""; } catch {}
 $("name").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); begin(); } });
 $("go").addEventListener("click", begin);
+$("age").value = age; $("sessionMin").value = String(sessionMin); $("tips").checked = showTips;
+$("age").addEventListener("change", () => { age = $("age").value; try { localStorage.setItem("age", age); } catch {} });
+$("sessionMin").addEventListener("change", () => { sessionMin = +$("sessionMin").value; try { localStorage.setItem("sessionMin", sessionMin); } catch {} });
+$("tips").addEventListener("change", () => { showTips = $("tips").checked; try { localStorage.setItem("tips", showTips ? "on" : "off"); } catch {} });
+$("todayLine").textContent = `Played today: ${todayMinutes()} min`;
+$("didit").addEventListener("pointerdown", e => { e.stopPropagation(); $("didit").hidden = true; const r = $("didit").getBoundingClientRect(); burst(r.left + r.width / 2, r.top, 30, "👏"); say(["Great job doing it together!"]); });
 $("sing").checked = singing;
 $("sing").addEventListener("change", () => { singing = $("sing").checked; try { localStorage.setItem("sing", singing ? "on" : "off"); } catch {} });
 render(TOPICS[0].card(0));   // card visible behind the setup screen
@@ -1446,11 +2285,16 @@ async function begin() {
   }
   for (const k in visits) delete visits[k];
   show(0, 0);
-  say([`${childName ? `Hi ${childName}! ` : ""}Let's learn and play.`, ...steps(current.speech)], current.afterSpeech);
+  startLullaby();
+  const hi = childName ? (recordingFor(`Hi ${childName}! Let's learn and play.`) ? [`Hi ${childName}! Let's learn and play.`] : [`Hi ${childName}!`, "Let's learn and play."]) : ["Let's learn and play."];
+  say([...hi, ...steps(current.speech)], current.afterSpeech);
 }
 function exitGame() {
   if (isNative) { window.webkit.messageHandlers.quit.postMessage(1); return; }
   playing = false; clearTimers(); hush();
+  if (bubbleTimer) { clearInterval(bubbleTimer); bubbleTimer = null; }
+  if (lullabyTimer) { clearTimeout(lullabyTimer); lullabyTimer = null; }
+  if ($("bubbles")) $("bubbles").innerHTML = "";
   navigator.keyboard?.unlock?.();
   if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
   $("setup").hidden = false;
