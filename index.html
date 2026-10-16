@@ -173,7 +173,11 @@
   .baby .skin { fill: #f5c7a1; } .baby .suit { fill: hsl(var(--hue) 70% 62%); } .baby .sock { fill: #fff; }
   .baby .hair { fill: none; stroke: #6b4226; stroke-width: 5; stroke-linecap: round; }
   .baby .ink { fill: #3b2f45; } .baby .line { fill: none; stroke: #3b2f45; stroke-width: 3.5; stroke-linecap: round; }
-  .baby .cheek { fill: #ff8fa3; opacity: .45; } .baby .tongue { fill: #ff7d92; }
+  .baby .cheek { fill: #ff8fa3; opacity: .45; } .baby .nose { fill: #e8a47c; }
+  .p-show { animation: none; }
+  .baby .ring { fill: rgb(255 210 26 / .18); stroke: #ffb800; stroke-width: 3.5; transform-box: fill-box; transform-origin: center; animation: ringpulse 1.3s ease-in-out infinite; }
+  @keyframes ringpulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.18); opacity: .7; } }
+  .qbaby { display: block; width: 78%; } .qbaby .baby { width: 100%; } .baby .tongue { fill: #ff7d92; }
   .baby .arm-l { transform-origin: 69.5px 120px; transform: rotate(var(--la)); }
   .baby .arm-r { transform-origin: 130.5px 120px; transform: rotate(var(--ra)); }
   .baby .prop  { transform-origin: 131px 167px; transform: rotate(calc(var(--pt) - var(--ra))); font-size: 34px; }
@@ -726,6 +730,23 @@ const FRUITS = [
 ];
 
 // Body: [name, picture, what it does, copy me, plural?]
+// Where each part is on the baby drawing (viewBox 200×250): [x, y, radius] rings, and the face it needs
+const BODY_SPOTS = {
+  Head: { rings: [[100,68,49]], face: "" },
+  Hair: { rings: [[100,31,17]], face: "" },
+  Eyes: { rings: [[85,66,10],[115,66,10]], face: "" },
+  Ears: { rings: [[58,72,13],[142,72,13]], face: "" },
+  Nose: { rings: [[100,78,9]], face: "" },
+  Mouth: { rings: [[100,89,12]], face: "open" },
+  Teeth: { rings: [[100,86,9]], face: "open" },
+  Tongue: { rings: [[100,94,8]], face: "open" },
+  Hands: { rings: [[60,163,13],[140,163,13]], face: "" },
+  Fingers: { rings: [[60,166,10],[140,166,10]], face: "" },
+  Arms: { rings: [[65,140,16],[135,140,16]], face: "" },
+  Legs: { rings: [[87,193,17],[113,193,17]], face: "" },
+  Feet: { rings: [[86,221,15],[114,221,15]], face: "" },
+  Toes: { rings: [[79,223,6],[91,224,6],[109,224,6],[121,223,6]], face: "" }
+};
 const BODY = [
   ["Head", "🙂", "We nod our head yes, and shake it no.", "Can you nod your head?"],
   ["Hair", "💇", "Hair grows on top of our head.", "Can you touch your hair?"],
@@ -777,12 +798,14 @@ function baby(pose, things = {}) {
         <g class="eyes-open"><ellipse class="ink" cx="85" cy="66" rx="4.5" ry="6"/><ellipse class="ink" cx="115" cy="66" rx="4.5" ry="6"/></g>
         <g class="eyes-closed"><path class="line" d="M79 67 q6 5 12 0"/><path class="line" d="M109 67 q6 5 12 0"/></g>
         <circle class="cheek" cx="74" cy="82" r="7"/><circle class="cheek" cx="126" cy="82" r="7"/>
+        <ellipse class="nose" cx="100" cy="78" rx="4.5" ry="3.2"/>
         <path class="line m-smile" d="M89 86 q11 10 22 0"/>
-        <g class="m-open"><ellipse class="ink" cx="100" cy="90" rx="7" ry="8"/><ellipse class="tongue" cx="100" cy="94" rx="4.5" ry="3"/></g>
+        <g class="m-open"><ellipse class="ink" cx="100" cy="90" rx="7" ry="8"/><rect x="95" y="83" width="10" height="3.5" rx="1.5" fill="#fff"/><ellipse class="tongue" cx="100" cy="94" rx="4.5" ry="3"/></g>
       </g>
       <g class="arm-l"><rect class="suit" x="62" y="116" width="15" height="46" rx="7.5"/><circle class="skin" cx="69.5" cy="164" r="9"/></g>
       <g class="arm-r"><rect class="suit" x="123" y="116" width="15" height="46" rx="7.5"/><circle class="skin" cx="130.5" cy="164" r="9"/>${prop}</g>
     </g>
+    ${(things.rings || []).map(([x, y, r]) => `<circle class="ring" cx="${x}" cy="${y}" r="${r}"/>`).join("")}
   </svg>${slot("front")}${slot("feet")}${slot("side")}${slot("hold")}`;
 }
 // clip = a real video in videos/ (e.g. "brush-teeth"). Until it plays, or if it's
@@ -1060,7 +1083,7 @@ const TOPICS = [
   { id: "body", label: "👀 Body", size: BODY.length, card(i) {
       const [name, emoji, what, turn] = BODY[i];
       return { hue: i * 25 + 330, big: "", small: "", when: "🧒 My body", detail: what,
-        visual: scene(act(emoji, "breathe"), ["✨", "fx-pop"]), word: `<b>${name}</b>`,
+        visual: scene(baby("show", { face: BODY_SPOTS[name].face, rings: BODY_SPOTS[name].rings }), ["✨", "fx-pop"]), word: `<b>${name}</b>`,
         speech: [`${name}.`, { text: what, onstart: () => setDetail(what) }, { text: turn, onstart: () => setDetail(turn) }],
         afterSpeech: () => showDidIt() };
   }},
@@ -2045,8 +2068,8 @@ const POOLS = {
     q: `Where is the ${n}?`, yes: `Yes! That's the ${n}!`, that: `That's the ${n}.` })),
   fruits: () => FRUITS.map(([n, e]) => ({ key: `fruit:${n}`, html: `<span class="qemoji">${e}</span>`,
     q: `Where is the ${n.toLowerCase()}?`, yes: `Yes! That's the ${n.toLowerCase()}!`, that: `That's the ${n.toLowerCase()}.` })),
-  body: () => BODY.filter(([n], k) => BODY.findIndex(b => b[1] === BODY[k][1]) === k).map(([n, e, , , pl]) => ({ key: `body:${n}`,
-    html: `<span class="qemoji">${e}</span>`,
+  body: () => BODY.filter(([n]) => !["Fingers", "Toes", "Teeth", "Tongue"].includes(n)).map(([n, e, , , pl]) => ({ key: `body:${n}`,
+    html: `<span class="qbaby">${baby("show", { face: BODY_SPOTS[n].face, rings: BODY_SPOTS[n].rings })}</span>`,
     q: `Where ${pl ? "are" : "is"} the ${n.toLowerCase()}?`, yes: `Yes! ${pl ? "Those are" : "That's"} the ${n.toLowerCase()}!`,
     that: `${pl ? "Those are" : "That's"} the ${n.toLowerCase()}.` })),
   things: () => THINGS.map(([n, e]) => ({ key: `thing:${n}`, html: `<span class="qemoji">${e}</span>`,
