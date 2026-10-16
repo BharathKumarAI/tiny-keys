@@ -177,7 +177,10 @@
   .p-show { animation: none; }
   .baby .ring { fill: rgb(255 210 26 / .18); stroke: #ffb800; stroke-width: 3.5; transform-box: fill-box; transform-origin: center; animation: ringpulse 1.3s ease-in-out infinite; }
   @keyframes ringpulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.18); opacity: .7; } }
-  .qbaby { display: block; width: 78%; } .qbaby .baby { width: 100%; } .baby .tongue { fill: #ff7d92; }
+  .qbaby { display: block; width: 78%; } .qbaby .baby { width: 100%; }
+  .bodypair { display: flex; align-items: center; justify-content: center; gap: min(3vw, 20px); max-width: 100%; }
+  .bphoto { width: min(32vh, 52vw); aspect-ratio: 1; object-fit: cover; border-radius: 28px; border: 1vh solid rgb(255 255 255 / .85); background: var(--paper); animation: pop .5s ease-out; }
+  .bmini { display: inline-block; } .bmini .baby { width: min(15vh, 24vw); } .baby .tongue { fill: #ff7d92; }
   .baby .arm-l { transform-origin: 69.5px 120px; transform: rotate(var(--la)); }
   .baby .arm-r { transform-origin: 130.5px 120px; transform: rotate(var(--ra)); }
   .baby .prop  { transform-origin: 131px 167px; transform: rotate(calc(var(--pt) - var(--ra))); font-size: 34px; }
@@ -1083,7 +1086,8 @@ const TOPICS = [
   { id: "body", label: "👀 Body", size: BODY.length, card(i) {
       const [name, emoji, what, turn] = BODY[i];
       return { hue: i * 25 + 330, big: "", small: "", when: "🧒 My body", detail: what,
-        visual: scene(baby("show", { face: BODY_SPOTS[name].face, rings: BODY_SPOTS[name].rings }), ["✨", "fx-pop"]), word: `<b>${name}</b>`,
+        // a real photo of the part, and the baby drawing showing where it is on a body
+        visual: `<div class="bodypair"><img class="bphoto" src="photos/body-${name.toLowerCase()}.jpg" alt="${name}" onerror="this.remove()"><span class="bmini">${baby("show", { face: BODY_SPOTS[name].face, rings: BODY_SPOTS[name].rings })}</span></div>`, word: `<b>${name}</b>`,
         speech: [`${name}.`, { text: what, onstart: () => setDetail(what) }, { text: turn, onstart: () => setDetail(turn) }],
         afterSpeech: () => showDidIt() };
   }},
