@@ -1317,7 +1317,18 @@ function loadSound(url) {
 (() => { const sc = document.createElement("script"); sc.src = "voice/index.js"; sc.onerror = () => {}; document.head.appendChild(sc); })();
 
 let actx, masterBus = null;
-function audio() { return actx || (actx = new (window.AudioContext || window.webkitAudioContext)()); }
+function audio() {
+  if (!actx) {
+    // iPhone: ask for media playback before the first sound, so the silent switch doesn't mute the game
+    try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch {}
+    actx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  return actx;
+}
+// iOS pauses web audio when the phone locks or the app goes to the background; wake it when it's back
+["visibilitychange", "pageshow", "focus"].forEach(t => addEventListener(t, () => {
+  if (!document.hidden && actx && actx.state !== "running") actx.resume?.().catch?.(() => {});
+}));
 function getMaster() {
   if (!masterBus) {
     const a = audio();
