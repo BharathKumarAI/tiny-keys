@@ -261,6 +261,12 @@
     text-wrap: balance; min-height: 2.7em;
   }
   #detail.say { animation: pop .4s ease-out; }
+  #detail .lw { display: inline-block; transition: color .15s, transform .15s; }
+  #detail .lw.lit { color: var(--tone); transform: translateY(-2px) scale(1.06); }
+  #word.beat { animation: beat .25s ease-out; }
+  .toggle { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 14px;
+    font: 700 17px/1 var(--body); color: var(--muted); cursor: pointer; user-select: none; }
+  .toggle input { width: 22px; height: 22px; accent-color: var(--rose); }
   .act.spin { transform-origin: 50% 50%; }
 
   /* Animal call bubble ("Moo!") */
@@ -287,6 +293,21 @@
     text-shadow: 0 .08em 0 rgb(0 0 0 / .25); opacity: 0; transition: opacity .3s;
   }
   #cheer.show { opacity: 1; animation: pop .6s cubic-bezier(.2, 1.6, .4, 1); }
+  #jar {
+    position: fixed; z-index: 5; right: max(12px, env(safe-area-inset-right, 0px)); top: calc(62px + env(safe-area-inset-top, 0px));
+    border: 0; background: rgb(255 255 255 / .7); border-radius: 18px; padding: 6px 10px 4px; cursor: pointer;
+    font: 800 18px/1 var(--display); color: var(--tone-dark); display: flex; align-items: center; gap: 4px;
+    box-shadow: 0 3px 0 rgb(0 0 0 / .1);
+  }
+  #jar span { font-size: 30px; }
+  #jar.got { animation: wobble .8s ease-in-out; }
+  .flyer { position: fixed; z-index: 6; font-size: min(18vh, 28vw); pointer-events: none;
+    transition: transform 1.1s cubic-bezier(.5, -0.3, .3, 1), font-size 1.1s ease-in; }
+  #stickers { position: fixed; inset: 0; z-index: 9; background: rgb(59 47 69 / .55); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  #stickers .sheet { background: var(--paper); border-radius: 28px; padding: 22px; width: min(560px, 100%); max-height: 80vh; overflow: auto; text-align: center; }
+  #stickers h2 { margin: 0 0 12px; font: 800 30px/1 var(--display); color: var(--rose); }
+  #stickerGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 8px; font-size: 42px; }
+  #stickers p { color: var(--muted); margin: 14px 0 0; }
 
   /* ---------- Xylophone ---------- */
   #xylo {
@@ -402,6 +423,8 @@
   <div id="detail" hidden></div>
 </main>
 <div id="cheer"></div>
+<button id="jar" aria-label="Sticker jar"><span>🫙</span><b id="jarCount">0</b></button>
+<div id="stickers" hidden><div class="sheet"><h2 id="stickerTitle">My stickers</h2><div id="stickerGrid"></div><p>Tap anywhere to close</p></div></div>
 <div id="xylo"></div>
 <div id="hint">Tap to hear again · Swipe up for the next one</div>
 
@@ -424,6 +447,7 @@
     </ul>
     <label for="name">Child's name</label>
     <input id="name" placeholder="e.g. Aarav" maxlength="20" autocomplete="off" spellcheck="false">
+    <label class="toggle"><input type="checkbox" id="sing" checked> 🎵 Sing the activities</label>
     <button id="go">Let's play!</button>
     <small>Grown-ups: <kbd>Control</kbd> + <kbd>Option</kbd> + <kbd>Q</kbd> leaves the game.</small>
     <details class="credits">
@@ -618,10 +642,78 @@ const NOTE_NAMES = ["C","C♯","D","D♯","E","F","F♯","G","G♯","A","A♯","
 const NOTE_COLORS = { C: "#ff4d4d", D: "#ff8a3d", E: "#ffc93d", F: "#7ed957", G: "#3dd6a8", A: "#3db8ff", B: "#a05aff" };
 const BAR_MIDI = [72, 74, 76, 77, 79, 81, 83, 84, 86, 88];   // the xylophone bars 1–0
 const midiOf = n => { const [, l, sh, o] = n.match(/^([A-G])(#?)(\d)$/); return 12 * (+o + 1) + "C D EF G A B".indexOf(l) + (sh ? 1 : 0); };
-const parseNotes = str => str.trim().split(/\s+/).filter(Boolean).map(t => { const [n, b] = t.split(":"); return [midiOf(n), +(b || 1)]; });
+const parseNotes = str => str.trim().split(/\s+/).filter(Boolean).map(t => { const [n, b] = t.split(":"); return [n === "R" ? null : midiOf(n), +(b || 1)]; });
 
 const CHEERS = ["Well done, {n}.", "Lovely, {n}.", "You're a star, {n}.", "Good job, {n}.",
   "That's right, {n}.", "Keep going, {n}.", "So clever, {n}.", "I'm proud of you, {n}."];
+
+/* ================= Sing-along songs =================
+   Familiar public-domain tunes. Each line: melody notes ("R" = rest); the words of that
+   line are said on its first beat and light up one by one as the melody plays. */
+const TUNES = {
+  mulberry: { beat: 430, inst: "xylophone", lines: [
+    "C5 C5 C5 E5 G5 G5 E5 C5:2", "D5 D5 D5 B4 G4 G4 B4 G4:2", "C5 C5 C5 E5 G5 G5 E5 C5:2", "D5 D5 G4 G4 B4 B4 C5:3"] },
+  happy: { beat: 360, inst: "marimba", lines: [
+    "G4 G4 C5 C5 C5 C5 C5 B4 C5 D5:2 R:2", "G4 G4 D5 D5 D5 D5 D5 C5 D5 E5:2 R:2",
+    "E5 E5 F5 F5 F5 F5 A5 A5 F5 F5 E5 E5 D5 D5 C5:2", "G4 G4 C5 C5 C5 C5 C5 B4 C5 D5:2 R:2"] },
+  twinkle: { beat: 560, inst: "musicbox", lines: [
+    "C5 C5 G5 G5 A5 A5 G5:2", "F5 F5 E5 E5 D5 D5 C5:2", "G5 G5 F5 F5 E5 E5 D5:2", "G5 G5 F5 F5 E5 E5 D5:2"] },
+  farm: { beat: 380, inst: "marimba", lines: [
+    "G5 G5 G5 D5 E5 E5 D5:2 B5 B5 A5 A5 G5:3", "D5 G5 G5 G5 D5 E5 E5 D5:2 B5 B5 A5 A5 G5:3", "R:5",
+    "D5 D5 G5 G5 G5 D5 D5 G5 G5 G5:2", "G5 G5 G5 D5 E5 E5 D5:2 B5 B5 A5 A5 G5:3"] },
+};
+// "This is the way we brush our teeth"
+const mulberry = (phrase, short, ending) => ({ tune: "mulberry",
+  lines: [`This is the way we ${phrase},`, `${short}, ${short}.`, `This is the way we ${phrase},`, ending] });
+// "If you're happy and you know it, clap your hands" (+ a sound in the gaps)
+const happy = (doIt, fx) => ({ tune: "happy", fx,
+  lines: [`If you're happy and you know it, ${doIt}!`, `If you're happy and you know it, ${doIt}!`,
+          "If you're happy and you know it, then your face will surely show it.", `If you're happy and you know it, ${doIt}!`] });
+const DAY_SONGS = {
+  "Wake up":       mulberry("wake and stretch", "wake and stretch", "so early in the morning."),
+  "Use the potty": mulberry("use the potty", "use the potty", "and then we wash our hands."),
+  "Brush teeth":   mulberry("brush our teeth", "brush our teeth", "so early in the morning."),
+  "Wash hands":    mulberry("wash our hands", "wash our hands", "before we eat our food."),
+  "Get dressed":   mulberry("put on our clothes", "on our clothes", "so early in the morning."),
+  "Put on shoes":  mulberry("put on our shoes", "on our shoes", "before we go outside."),
+  "Eat":           mulberry("eat our food", "eat our food", "to grow up big and strong."),
+  "Drink":         mulberry("drink our milk", "drink our milk", "sip, sip, sip, ahh!"),
+  "Walk":          mulberry("walk along", "walk along", "step, step, step, step, step."),
+  "Run":           mulberry("run so fast", "run so fast", "ready, set, go!"),
+  "Jump":          happy("jump up high", "boing"),
+  "Play":          mulberry("play with toys", "play with toys", "playing is so fun!"),
+  "Share":         mulberry("share our toys", "share our toys", "sharing makes us happy."),
+  "Tidy up":       mulberry("tidy up", "tidy up", "and put the toys away."),
+  "Clap":          happy("clap your hands", "clap"),
+  "Wave":          happy("wave hello", "chime"),
+  "Hug":           happy("give a hug", "chime"),
+  "Sing":          mulberry("sing a song", "sing a song", "la, la, la, la, la!"),
+  "Dance":         happy("dance around", "chime"),
+  "Sit down":      mulberry("sit down nice", "sit down nice", "at the table now."),
+  "Say thank you": mulberry("say thank you", "say thank you", "when someone helps us."),
+  "Read a book":   mulberry("read a book", "read a book", "at story time tonight."),
+  "Take a bath":   mulberry("take a bath", "take a bath", "splash, splash, splash!"),
+  "Sleep":         { tune: "twinkle", lines: ["Twinkle, twinkle, little star,", "time to sleep, wherever you are.",
+                                              "Close your eyes and rest your head,", "snuggle up in your cozy bed."] },
+};
+const ANIMAL_WORDS = { cow: "moo moo", dog: "woof woof", cat: "meow meow", duck: "quack quack", sheep: "baa baa",
+  lion: "roar roar", pig: "oink oink", frog: "ribbit ribbit", owl: "hoo hoo", horse: "neigh neigh",
+  rooster: "cock a doodle", bee: "buzz buzz" };
+const farmSong = name => ({ tune: "farm", call: name,
+  lines: ["Old MacDonald had a farm, E I E I O.", `And on that farm he had a ${name}, E I E I O.`, "",
+          `With a ${ANIMAL_WORDS[name]} here, and a ${ANIMAL_WORDS[name]} there.`, "Old MacDonald had a farm, E I E I O."] });
+const fruitSong = (name, color) => { const f = `${color.toLowerCase()} ${name.toLowerCase()}`;
+  return { tune: "mulberry", lines: [`Do you like the ${f},`, `${name.toLowerCase()}, ${name.toLowerCase()}?`, `Do you like the ${f}?`, "Yum, yum, yum, yum, yum!"] }; };
+const colorSong = (name, thing) => ({ tune: "mulberry",
+  lines: [`${name} is the color of ${thing},`, `of ${thing}, of ${thing}.`, `${name} is the color of ${thing},`, `${name}, ${name}, ${name}!`] });
+const SHAPE_FACTS = { Circle: "round and round and round", Square: "four sides, all the same", Triangle: "one, two, three sides",
+  Star: "twinkle, twinkle, twinkle", Heart: "full of love for you", Rectangle: "long, with four sides", Oval: "just like an egg",
+  Diamond: "pointy at the top" };
+const shapeSong = name => ({ tune: "mulberry",
+  lines: [`Look at the ${name.toLowerCase()}, the ${name.toLowerCase()},`, `${SHAPE_FACTS[name]}.`, `Look at the ${name.toLowerCase()},`, "draw it in the air!"] });
+let singing = true;
+try { singing = localStorage.getItem("sing") !== "off"; } catch {}
+
 
 /* ================= Motions: every picture moves in its own way ================= */
 const MOTION = {
@@ -672,20 +764,21 @@ const TOPICS = [
       const [name, hex, emoji, thing] = COLORS[i];
       return { hue: hueOf(hex, i), big: "", small: "",
         visual: `<span class="blob" style="background:${hex};--blob:${hex === "#ffffff" ? "#cfe" : hex}"><span>${emoji}</span></span>`,
-        word: `<b style="color:${hex === "#ffffff" ? "#8aa" : hex}">${name}</b>`, speech: `${name}. ${name}, like ${thing}.` };
+        word: `<b style="color:${hex === "#ffffff" ? "#8aa" : hex}">${name}</b>`, speech: `${name}. ${name}, like ${thing}.`,
+        song: colorSong(name, thing) };
   }},
   { id: "shapes", label: "🔺 Shapes", size: SHAPES.length, card(i) {
       const [name, line, raw] = SHAPES[i], fill = BAR_COLORS[(i * 3) % 10];
       const svg = raw.replace(/\/>$/, ' pathLength="1"/>');
       return { hue: i * 45, big: "", small: "",
         visual: `<svg class="shape" viewBox="0 0 100 100" fill="${fill}" stroke="#fff" stroke-width="4" stroke-linejoin="round">${svg}</svg>`,
-        word: `<b>${name}</b>`, speech: `${name}. ${line}` };
+        word: `<b>${name}</b>`, speech: `${name}. ${line}`, song: shapeSong(name) };
   }},
   { id: "animals", label: "🐮 Animals", size: ANIMALS.length, card(i) {
       const [name, emoji, sound] = ANIMALS[i];
       return { hue: i * 30, big: "", small: "", visual: `<span class="stagehold">${act(emoji, name)}<span class="bubble" hidden>${sound.includes("doodle") ? "Cock-a-doodle-doo" : cap(sound)}!</span></span>`,
         word: `The ${name} says <b>${sound}</b>!`, speech: `The ${name} says…`,
-        afterSpeech: () => animalCall(name, sound) };
+        afterSpeech: () => animalCall(name, sound), song: farmSong(name) };
   }},
   { id: "day", label: "🪥 My Day", size: ACTIONS.length, card(i) {
       const [name, pose, things, extra, when, why, turn, sfx] = ACTIONS[i];
@@ -693,7 +786,8 @@ const TOPICS = [
         visual: scene(baby(pose, things), extra, slug(name)), word: `<b>${name}</b>`,
         speech: [`${name}.`,
           { text: why, onstart: () => setDetail(why) },
-          { text: turn, onstart: () => { setDetail(turn); if (sfx === "clap") claps(3); } }] };
+          { text: turn, onstart: () => { setDetail(turn); if (sfx === "clap") claps(3); } }],
+        song: DAY_SONGS[name] };
   }},
   { id: "fruits", label: "🍎 Fruits", size: FRUITS.length, card(i) {
       const [name, emoji, color, fact, turn] = FRUITS[i];
@@ -702,7 +796,8 @@ const TOPICS = [
         word: `<b>${name}</b>`,
         speech: [`${name}.`,
           { text: fact, onstart: () => setDetail(fact) },
-          { text: turn, onstart: () => setDetail(turn) }] };
+          { text: turn, onstart: () => setDetail(turn) }],
+        song: fruitSong(name, color) };
   }},
   { id: "moves", label: "↕️ Up Down", size: MOVES.length, card(i) {
       const [, name, emoji, line, move] = MOVES[i];
@@ -774,55 +869,96 @@ if ("speechSynthesis" in window) { pickVoice(); speechSynthesis.addEventListener
 let speechId = 0;
 const steps = list => (Array.isArray(list) ? list : [list]).filter(Boolean).map(x => typeof x === "string" ? { text: x } : x);
 let nativeSpeech = null;   // { id, steps, done } for the Mac app's callbacks
-window.__stepStart = (id, k) => { if (nativeSpeech?.id === id) nativeSpeech.steps[k]?.onstart?.(); };
+window.__stepStart = () => {};
 window.__spoke = id => { if (nativeSpeech?.id === id) { const f = nativeSpeech.done; nativeSpeech = null; f?.(); } };
 
+// Each step plays its natural recording if the game has one (voice/), otherwise
+// the device voice reads it. Steps run one after another; a new say() stops the old one.
+let stopNow = null;
+const plain = t => t.replace(/«(.)»/g, "$1").replace(/\s+/g, " ").trim().toLowerCase();
+const recordingFor = t => window.VOICE?.[plain(t)];
 function say(list, done) {
   const id = ++speechId, segs = steps(list);
-  let ended = false;
-  const finish = () => { if (id === speechId && !ended) { ended = true; done?.(); } };
-  if (!segs.length) { finish(); return; }
-
-  if (isNative) {
-    const esc = t => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    // Lowercase, or the voice says "capital A"
-    const ssml = t => `<speak>${esc(t).replace(LETTER_MARK, (_, l) => `<say-as interpret-as="characters">${l.toLowerCase()}</say-as>`)}</speak>`;
-    nativeSpeech = { id, steps: segs, done: finish };
-    window.webkit.messageHandlers.speak.postMessage({ id, steps: segs.map(x => ssml(x.text)) });
-    return;
-  }
-  if (!("speechSynthesis" in window)) { segs.forEach(x => x.onstart?.()); finish(); return; }
-
-  speechSynthesis.cancel();
-  // Safari drops a sentence queued in the same instant as cancel(); give it a beat
-  setTimeout(() => {
-    if (id !== speechId) return;
-    const utterances = [];
+  stopVoice();
+  (async () => {
     for (const seg of segs) {
-      // "«A» is for Apple" → "a", " is for Apple" (a lone lowercase letter is read as its name)
-      const parts = seg.text.replace(LETTER_MARK, (_, l) => `«${l.toLowerCase()}»`).split(/«(.)»/).filter(t => t.trim());
-      parts.forEach((t, k) => {
-        const u = new SpeechSynthesisUtterance(t);
-        if (voice) u.voice = voice;
-        u.rate = 0.78; u.pitch = 1.0; u.volume = 0.85;
-        if (k === 0 && seg.onstart) u.onstart = () => { if (id === speechId) seg.onstart(); };
-        utterances.push(u);
-      });
+      if (id !== speechId) return;
+      seg.onstart?.();
+      await speakOne(seg, id);
     }
-    const last = utterances.at(-1);
-    if (!last) { finish(); return; }
-    last.onend = last.onerror = finish;
-    utterances.forEach(u => speechSynthesis.speak(u));
-    // Some browsers never fire "end"; don't leave the card waiting forever
-    const total = segs.reduce((n, x) => n + x.text.length, 0);
-    later(() => { segs.forEach(x => x.onstart?.()); finish(); }, 3000 + total * 150);
-  }, 60);
+    if (id === speechId) done?.();
+  })();
 }
-function hush() {
-  ++speechId; nativeSpeech = null;
+function stopVoice() {
+  const f = stopNow; stopNow = null; f?.();
+  nativeSpeech = null;
   if (isNative) window.webkit.messageHandlers.speak.postMessage({ id: speechId, steps: [] });
   else if ("speechSynthesis" in window) speechSynthesis.cancel();
 }
+function hush() { ++speechId; stopVoice(); }
+function speakOne(seg, id) {
+  return new Promise(resolve => {
+    let done = false;
+    const end = () => { if (!done) { done = true; if (stopNow === end) stopNow = null; resolve(); } };
+    stopNow = end;
+    const rec = recordingFor(seg.text);
+    if (rec) { playVoice(rec, end).catch(() => speakDevice(seg, id, end)); return; }
+    speakDevice(seg, id, end);
+  });
+}
+// Natural recording, through the unlocked Web Audio channel (or an <audio> fallback in the Mac app)
+async function playVoice(file, end) {
+  let buf;
+  try { buf = await loadSound(`voice/${file}`); }
+  catch {
+    const el = new Audio(`voice/${file}`);
+    el.onended = end; el.onerror = end;
+    const prev = stopNow; stopNow = () => { el.pause(); prev?.(); };
+    return el.play();
+  }
+  if (stopNow !== end) return;           // cut off while loading
+  const a = audio(); a.resume?.();
+  const src = a.createBufferSource(); src.buffer = buf; src.connect(a.destination);
+  src.onended = end; src.start();
+  stopNow = () => { try { src.stop(); } catch {} end(); };
+}
+function speakDevice(seg, id, end) {
+  const total = seg.text.length;
+  setTimeout(end, 3000 + total * 150);     // never wait forever on a voice that stays silent
+  if (isNative) {
+    const esc = t => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const ssml = `<speak>${esc(seg.text).replace(LETTER_MARK, (_, l) => `<say-as interpret-as="characters">${l.toLowerCase()}</say-as>`)}</speak>`;
+    nativeSpeech = { id, steps: [seg], done: end };
+    window.webkit.messageHandlers.speak.postMessage({ id, steps: [ssml] });
+    return;
+  }
+  if (!("speechSynthesis" in window)) { end(); return; }
+  speechSynthesis.cancel();
+  // Safari drops a sentence queued in the same instant as cancel(); give it a beat
+  setTimeout(() => {
+    if (id !== speechId) { end(); return; }
+    const parts = seg.text.replace(LETTER_MARK, (_, l) => `«${l.toLowerCase()}»`).split(/«(.)»/).filter(t => t.trim());
+    if (!parts.length) { end(); return; }
+    parts.forEach((t, k) => {
+      const u = new SpeechSynthesisUtterance(t);
+      if (voice) u.voice = voice;
+      u.rate = seg.rate ?? 0.78; u.pitch = seg.pitch ?? 1.0; u.volume = 0.85;
+      if (k === parts.length - 1) u.onend = u.onerror = end;
+      speechSynthesis.speak(u);
+    });
+  }, 60);
+}
+// Shared loader for recordings: fetched once, decoded once
+const soundBuffers = {};
+function loadSound(url) {
+  return soundBuffers[url] ||= fetch(url)
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+    .then(b => audio().decodeAudioData(b))
+    .catch(e => { delete soundBuffers[url]; throw e; });
+}
+// Recorded-voice index (voice/index.js sets window.VOICE); missing = device voice only
+(() => { const sc = document.createElement("script"); sc.src = "voice/index.js"; sc.onerror = () => {}; document.head.appendChild(sc); })();
+
 let actx;
 function audio() { return actx || (actx = new (window.AudioContext || window.webkitAudioContext)()); }
 function tone(freq, dur = 1.2, vol = 0.2, at = 0) {
@@ -905,14 +1041,55 @@ function play(c, { fresh = true } = {}) {
   const speech = steps(c.speech);
   if (fresh) {
     cardsShown++;
-    if (childName && cardsShown % 8 === 0) speech.push({ text: cheer() });
+    if (cardsShown % 6 === 0) { giveSticker(); speech.push({ text: "You got a sticker!" }); if (childName) speech.push({ text: cheer() }); }
     burst(innerWidth / 2, innerHeight * 0.42, 45);
   }
   stopCall();
   $("visual").querySelectorAll(".count").forEach(x => x.classList.remove("on"));
+  if (c.song && singing) { hush(); sing(c.song, fresh && cardsShown % 6 === 0); return; }
   say(speech, c.afterSpeech);
   c.after?.(c);
 }
+
+/* Sing a song: melody on the instrument, each line said on its first beat,
+   words lighting up in time with the notes. Ends with a little cheer now and then. */
+function sing(song, withCheer) {
+  const T = TUNES[song.tune];
+  let t = 350;
+  T.lines.forEach((notesStr, k) => {
+    const notes = parseNotes(notesStr), text = song.lines[k] || "";
+    const start = t, words = text ? text.split(/\s+/) : [];
+    const sounding = notes.filter(n => n[0] !== null).reduce((n, x) => n + x[1], 0) * T.beat;
+    later(() => {
+      if (text) { lyric(words); say({ text, rate: 0.95, pitch: 1.15 }); }
+      if (!text && song.call) animalCall(song.call, ANIMAL_WORDS[song.call]);   // the real animal answers
+    }, start);
+    words.forEach((_, j) => later(() => lightWord(j), start + j / words.length * sounding));
+    for (const [m, beats] of notes) {
+      const at = t;
+      later(() => {
+        if (m !== null) {
+          note(m, T.inst, beats * T.beat / 1000 * 0.9, 0.55);
+          const bar = BAR_MIDI.indexOf(m); if (bar >= 0) flashBar(bar);
+          restart($("word"), "beat");
+        } else if (song.fx) songFx(song.fx, T.beat);
+      }, at);
+      t += beats * T.beat;
+    }
+    t += 200;
+  });
+  later(() => { if (withCheer) { giveSticker(); say(["You got a sticker!", ...(childName ? [cheer()] : [])]); } }, t + 300);
+}
+function songFx(fx, beat) {
+  if (fx === "clap") { clapSound(); later(clapSound, beat); }
+  else if (fx === "boing") { boing(); later(boing, beat); }
+  else { note(96, "musicbox", 0.3, 0.8); later(() => note(100, "musicbox", 0.3, 0.8), beat); }
+}
+function lyric(words) {
+  const d = $("detail"); d.hidden = false;
+  d.innerHTML = words.map(w => `<span class="lw">${w}</span>`).join(" ");
+}
+function lightWord(j) { $("detail").querySelectorAll(".lw")[j]?.classList.add("lit"); }
 function show(t, i) {
   topic = t; index = (i + TOPICS[t].size) % TOPICS[t].size; lastIndex[t] = index;
   current = TOPICS[t].card(index);
@@ -956,13 +1133,7 @@ function claps(n) {
 // Phones only let an <audio> start right after a tap, and the published page can
 // block direct media links. So recordings are fetched, decoded and played through
 // the same Web Audio channel the Start button unlocked.
-const callBuffers = {};
-function loadCall(name) {
-  return callBuffers[name] ||= fetch(`sounds/${name}.mp3`)
-    .then(r => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
-    .then(b => audio().decodeAudioData(b))
-    .catch(e => { delete callBuffers[name]; throw e; });
-}
+const loadCall = name => loadSound(`sounds/${name}.mp3`);
 let call = null, callId = 0;
 function stopCall() {
   callId++;
@@ -1003,7 +1174,7 @@ const VOICES = {
   xylophone: { parts: [[1, 1, "sine"], [4, .15, "sine"]], a: .005, d: 1.0, v: .2 },
   flute:     { parts: [[1, 1, "sine"], [2, .12, "sine"]], a: .08, v: .16, held: true },
 };
-function note(midi, inst = "piano", dur = 0.5) {
+function note(midi, inst = "piano", dur = 0.5, vol = 1) {
   const a = audio(), t = a.currentTime, f = 440 * 2 ** ((midi - 69) / 12), V = VOICES[inst];
   const out = a.createGain(); out.connect(a.destination);
   const end = V.held ? t + dur + 0.2 : t + V.d;
@@ -1016,8 +1187,8 @@ function note(midi, inst = "piano", dur = 0.5) {
     o.connect(g).connect(out); o.start(t); o.stop(end);
   }
   out.gain.setValueAtTime(0, t);
-  out.gain.linearRampToValueAtTime(V.v, t + V.a);
-  if (V.held) { out.gain.setValueAtTime(V.v, t + dur); out.gain.linearRampToValueAtTime(0.0001, end); }
+  out.gain.linearRampToValueAtTime(V.v * vol, t + V.a);
+  if (V.held) { out.gain.setValueAtTime(V.v * vol, t + dur); out.gain.linearRampToValueAtTime(0.0001, end); }
   else out.gain.exponentialRampToValueAtTime(0.0001, end);
 }
 function playSong(i) {
@@ -1105,6 +1276,37 @@ function cheer() {
   return text;
 }
 
+/* ================= Sticker jar: a sticker every few activities ================= */
+const STICKERS = ["🦄","🚀","🐶","🌈","🦖","🐱","🍦","🚂","🦋","🐸","⭐","🐼","🚒","🍓","🐳","🎈","🦁","🐝","🌻","🚁","🐧","🍩","🐢","🦒"];
+let myStickers = [];
+try { myStickers = JSON.parse(localStorage.getItem("stickers") || "[]"); } catch {}
+const showJar = () => { $("jarCount").textContent = myStickers.length; };
+function giveSticker() {
+  const st = STICKERS[Math.floor(Math.random() * STICKERS.length)];
+  myStickers.push(st);
+  try { localStorage.setItem("stickers", JSON.stringify(myStickers)); } catch {}
+  const f = document.createElement("div");
+  f.className = "flyer"; f.textContent = st;
+  f.style.left = `calc(50% - .5em)`; f.style.top = "30%";
+  document.body.appendChild(f);
+  [0, 4, 7, 12].forEach((n, k) => later(() => note(84 + n, "musicbox", 0.4), k * 140));   // ta-da
+  burst(innerWidth / 2, innerHeight * 0.35, 60, st);
+  setTimeout(() => {
+    const j = $("jar").getBoundingClientRect(), r = f.getBoundingClientRect();
+    f.style.transform = `translate(${j.left - r.left}px, ${j.top - r.top}px) scale(.25)`;
+  }, 700);
+  setTimeout(() => { f.remove(); showJar(); restart($("jar"), "got"); }, 1900);
+  return st;
+}
+$("jar").addEventListener("pointerdown", e => e.stopPropagation());
+$("jar").addEventListener("click", () => {
+  $("stickerGrid").innerHTML = myStickers.length ? myStickers.map(x => `<span>${x}</span>`).join("") : "<p>Play to earn stickers!</p>";
+  $("stickerTitle").textContent = childName ? `${childName}'s stickers` : "My stickers";
+  $("stickers").hidden = false;
+});
+$("stickers").addEventListener("pointerdown", e => { e.stopPropagation(); $("stickers").hidden = true; });
+showJar();
+
 /* ================= Topic pills & xylophone ================= */
 TOPICS.forEach((tp, t) => {
   const b = document.createElement("button");
@@ -1157,7 +1359,7 @@ addEventListener("keydown", e => {
 /* ================= Touch: tap = repeat, swipe up = next, sideways = topic ================= */
 let start = null;
 addEventListener("pointerdown", e => {
-  if (!playing || e.target.closest("#topics, #xylo, #setup, .piano")) return;
+  if (!playing || e.target.closest("#topics, #xylo, #setup, .piano, #jar, #stickers")) return;
   start = { x: e.clientX, y: e.clientY, t: Date.now() };
 });
 addEventListener("pointerup", e => {
@@ -1177,6 +1379,8 @@ addEventListener("gesturestart", e => e.preventDefault());   // iOS pinch-zoom
 try { $("name").value = localStorage.getItem("childName") || ""; } catch {}
 $("name").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); begin(); } });
 $("go").addEventListener("click", begin);
+$("sing").checked = singing;
+$("sing").addEventListener("change", () => { singing = $("sing").checked; try { localStorage.setItem("sing", singing ? "on" : "off"); } catch {} });
 render(TOPICS[0].card(0));   // card visible behind the setup screen
 
 async function begin() {
